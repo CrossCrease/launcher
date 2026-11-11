@@ -2,15 +2,8 @@
   "id": "nhl24",
   "name": "NHL 24",
   "system": "PlayStation 4",
-  "description": "CrossCrease profile for the local NHL 24 build.",
-  "executable_relative": "nhl24.exe",
-  "arguments_template": "--show-fps -g \"{required_file}\"",
-  "working_directory_relative": ".",
-  "required_file_relative": "game\\eboot.bin",
-  "search_roots": [
-    "%USERPROFILE%\\Games\\NHL 24",
-    "{launcher}\\games\\nhl24"
-  ],
+  "status": "planned",
+  "description": "NHL 24 is planned for a future CrossCrease release.",
   "cover_download": { "source": "wikipedia", "file": "NHL 24 cover art.jpg" },
   "accent": "#4D74FF"
 }

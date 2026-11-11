@@ -105,8 +105,7 @@ Delete the file to go back to the published feeds. For automated tests, the envi
 ## Included profiles
 
 - NHL 17: supported. Downloads the CrossCrease NHL 17 runtime; **Play online** adds the online connection files.
-- NHL 24: supported profile (needs a local NHL 24 build).
-- NHL 15, 16, 18–23, 25, 26, 27: planned (`"status": "planned"`).
+- NHL 15, 16, 18–27: planned (`"status": "planned"`), shown as "Coming soon".
 
 ## Cover art
 

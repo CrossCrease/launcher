@@ -2,6 +2,11 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.4.1
+
+### Changed
+- NHL 24 now shows as "Coming soon". Its old profile expected a self-built NHL 24 setup that is not available to players, so it always showed "Not found". It returns as a supported game once an NHL 24 runtime is published. The profile id is unchanged, so saved locations, covers and settings carry over.
+
 ## 0.4.0 — Downloads and updates
 
 ### Added
