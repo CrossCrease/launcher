@@ -144,22 +144,43 @@ namespace CrossCrease
             return feed;
         }
 
+        // Follows redirects itself so relative package URLs can be resolved against the last address on
+        // the feed's own host. GitHub sends releases/latest/download/... to releases/download/<tag>/...
+        // (same host, the right base) and then to a short-lived signed storage URL (wrong base).
+        static WebResponse Open(Uri uri, int timeout, out Uri baseUri)
+        {
+            baseUri = uri;
+            for (int hop = 0; hop < 10; hop++)
+            {
+                var request = WebRequest.Create(uri);
+                request.Timeout = timeout;
+                var http = request as HttpWebRequest;
+                if (http == null) return request.GetResponse();
+                http.UserAgent = UserAgent;
+                http.AllowAutoRedirect = false;
+                http.ReadWriteTimeout = 60000;
+                http.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
+                var response = (HttpWebResponse)http.GetResponse();
+                int status = (int)response.StatusCode;
+                if (status < 300 || status >= 400) return response;
+                string location = response.Headers[HttpResponseHeader.Location];
+                response.Close();
+                if (string.IsNullOrWhiteSpace(location)) throw new PackageException("The download server sent an invalid redirect.");
+                var next = new Uri(uri, location);
+                if (next.Scheme != Uri.UriSchemeHttps && uri.Scheme == Uri.UriSchemeHttps)
+                    throw new PackageException("The download server redirected to an insecure address.");
+                if (string.Equals(next.Host, baseUri.Host, StringComparison.OrdinalIgnoreCase)) baseUri = next;
+                uri = next;
+            }
+            throw new PackageException("The download server redirected too many times.");
+        }
+
         static byte[] Download(Uri uri, out Uri responseUri)
         {
-            var request = WebRequest.Create(uri);
-            request.Timeout = 20000;
-            var http = request as HttpWebRequest;
-            if (http != null)
-            {
-                http.UserAgent = UserAgent;
-                http.AllowAutoRedirect = true;
-                http.CachePolicy = new System.Net.Cache.RequestCachePolicy(System.Net.Cache.RequestCacheLevel.NoCacheNoStore);
-            }
-            using (var response = request.GetResponse())
+            using (var response = Open(uri, 20000, out responseUri))
             using (var stream = response.GetResponseStream())
             using (var memory = new MemoryStream())
             {
-                responseUri = response.ResponseUri;
                 var buffer = new byte[16384];
                 int read;
                 while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
@@ -220,11 +241,8 @@ namespace CrossCrease
 
         void DownloadVerified(Uri uri, string target, FeedPackage package, ProgressHandler progress)
         {
-            var request = WebRequest.Create(uri);
-            request.Timeout = 30000;
-            var http = request as HttpWebRequest;
-            if (http != null) { http.UserAgent = UserAgent; http.AllowAutoRedirect = true; http.ReadWriteTimeout = 60000; }
-            using (var response = request.GetResponse())
+            Uri ignored;
+            using (var response = Open(uri, 30000, out ignored))
             using (var stream = response.GetResponseStream())
             using (var file = new FileStream(target, FileMode.Create, FileAccess.Write, FileShare.None))
             using (var sha = SHA256.Create())
