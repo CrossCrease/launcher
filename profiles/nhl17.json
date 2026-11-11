@@ -1,0 +1,41 @@
+{
+  "id": "nhl17",
+  "name": "NHL 17",
+  "system": "PlayStation 4",
+  "description": "CrossCrease NHL 17. The launcher downloads the CrossCrease runtime; you supply your own copy of the game with update 1.08.",
+  "package_feed": "https://github.com/CrossCrease/nhl17/releases/latest/download/crosscrease-nhl17-feed.json",
+  "packages": ["runtime"],
+  "executable": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\"",
+  "working_directory": "{data}",
+  "required_file_relative": "eboot.bin",
+  "search_roots": [
+    "{launcher}\\..\\..\\nhl17\\game",
+    "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17"
+  ],
+  "settings": [
+    {
+      "id": "online_id",
+      "label": "Online ID",
+      "description": "Your name online: 3 to 16 letters, numbers, - or _.",
+      "pattern": "^[a-zA-Z0-9_-]{3,16}$"
+    },
+    {
+      "id": "server_address",
+      "label": "Server",
+      "description": "Type default to use the server from the online files, or enter a host name or IP address.",
+      "pattern": "^[a-zA-Z0-9.:-]{1,253}$",
+      "default": "default"
+    }
+  ],
+  "launch_options": [
+    {
+      "id": "online",
+      "label": "Play online",
+      "packages": ["runtime", "online"],
+      "settings": ["online_id", "server_address"],
+      "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -ConnectionDirectory \"{package:online}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\""
+    }
+  ],
+  "accent": "#27C9B3"
+}

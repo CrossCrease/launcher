@@ -1,0 +1,15 @@
+{
+  "id": "nhl24",
+  "name": "NHL 24",
+  "system": "PlayStation 4",
+  "description": "CrossCrease profile for the local NHL 24 build.",
+  "executable_relative": "nhl24.exe",
+  "arguments_template": "--show-fps -g \"{required_file}\"",
+  "working_directory_relative": ".",
+  "required_file_relative": "game\\eboot.bin",
+  "search_roots": [
+    "%USERPROFILE%\\Games\\NHL 24",
+    "{launcher}\\games\\nhl24"
+  ],
+  "accent": "#4D74FF"
+}

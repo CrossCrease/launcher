@@ -1,0 +1,11 @@
+# Build and release output
+dist/
+artifacts/
+bin/
+obj/
+# Editor and user files
+*.user
+*.suo
+.vs/
+# Never commit user data: game files, covers, saves, local feeds
+*.pkg
