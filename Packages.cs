@@ -78,7 +78,8 @@ namespace CrossCrease
             try { ServicePointManager.SecurityProtocol |= (SecurityProtocolType)3072; } catch { } // TLS 1.2
         }
 
-        public static string UserAgent { get { return "CrossCrease-Launcher/" + BuildInfo.Version; } }
+        // Includes the project address, as Wikimedia's User-Agent policy asks of API clients.
+        public static string UserAgent { get { return "CrossCrease-Launcher/" + BuildInfo.Version + " (https://github.com/CrossCrease/launcher)"; } }
 
         public string GameDirectory(string gameId)
         {

@@ -37,5 +37,6 @@
       "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -ConnectionDirectory \"{package:online}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\""
     }
   ],
+  "cover_download": { "source": "wikipedia", "file": "NHL 17 cover art.jpg" },
   "accent": "#27C9B3"
 }

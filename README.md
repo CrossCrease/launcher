@@ -108,7 +108,17 @@ Delete the file to go back to the published feeds. For automated tests, the envi
 
 The launcher's colours follow the selected cover. CrossCrease finds the main colour of the full-colour cover art: it detects and skips the PS4/PS5 platform banner and the rating strip, and gives the most weight to saturated colours near the centre, which is usually the jersey. The top bar, selection bar, library background, logo, Play button and selection ring are all tinted with that colour. This applies to every game, including greyed-out ones. Hovering a cover lifts it with a soft glow in its own colour. Profiles without a cover image use their `accent` colour.
 
-CrossCrease generates a branded cover for every profile from the game name, platform, and `accent` colour. No publisher artwork is shipped.
+### Official covers
+
+Profiles can name where the game's official cover is published (`cover_download`). The launcher then downloads it **on your PC** at startup and keeps it in `%LOCALAPPDATA%\CrossCrease\covers\downloaded\`. No publisher artwork is part of the source code or any CrossCrease release.
+
+- The included NHL profiles use the cover image from each game's English Wikipedia article. Downloads are spaced out to respect Wikimedia's rate limits, and each file is checked against the SHA-1 checksum Wikipedia publishes for it.
+- The launcher checks for changed covers at most once a day, and immediately when a cover is missing.
+- A cover you chose yourself always takes priority over a downloaded one. **Reset cover** switches back to the downloaded cover.
+- To turn the downloads off, create `%LOCALAPPDATA%\CrossCrease\launcher.json` containing `{ "download_covers": false }`.
+- Wikipedia's covers are the standard key art, at about 270×370 pixels. Some show a different edition than your PS4/PS5 box. Choose your own image for a sharper or platform-specific cover.
+
+Without any cover, CrossCrease generates a branded one from the game name, platform, and `accent` colour.
 
 To use your own image, right-click a cover and choose **Choose cover image…**. The image is copied to `%LOCALAPPDATA%\CrossCrease\covers\<profile id>.<ext>`, so it survives launcher updates. **Reset cover image** removes it. A profile can also point to a bundled image with the `cover` field. Portrait images look best. Box art that is wider than the 2:3 card (most console case scans) is fitted to the card width rather than cropped, and the strip below it is filled with a blurred extension of the cover.
 
@@ -169,6 +179,11 @@ Both use the .NET Framework 4 `csc.exe` that ships with Windows; nothing else ne
   - `{setting:<id>}`: a saved setting.
   - In arguments only: `{root}`, `{required_file}` and `{executable_dir}`.
 - `cover` is optional and is resolved relative to the profile file. It may also use environment variables or `{launcher}`.
+- `cover_download` (optional) names the official cover to download on the player's PC:
+  - `{ "source": "wikipedia", "file": "NHL 17 cover art.jpg" }` for an English Wikipedia file
+  - `{ "source": "url", "url": "https://…" }` for a direct HTTPS image address
+
+  Cover priority is: the player's own cover, then the downloaded cover, then `cover`, then the generated cover.
 - Covers are sorted by name in natural order (NHL 15, NHL 16, … NHL 27).
 
 Use **Import profile** to copy another JSON profile into the launcher, or place JSON files directly in the `profiles` folder and press **Refresh**.

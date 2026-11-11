@@ -4,5 +4,6 @@
   "system": "PlayStation 5",
   "status": "planned",
   "description": "NHL 25 is planned for a future CrossCrease release.",
+  "cover_download": { "source": "wikipedia", "file": "NHL 25 cover art.jpg" },
   "accent": "#AD7F58"
 }

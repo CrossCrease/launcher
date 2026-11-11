@@ -4,5 +4,6 @@
   "system": "PlayStation 4",
   "status": "planned",
   "description": "NHL 20 is planned for a future CrossCrease release.",
+  "cover_download": { "source": "wikipedia", "file": "NHL20 Cover.jpg" },
   "accent": "#0090FF"
 }

@@ -4,5 +4,6 @@
   "system": "PlayStation 4",
   "status": "planned",
   "description": "NHL 21 is planned for a future CrossCrease release.",
+  "cover_download": { "source": "wikipedia", "file": "NHL 21 cover art.jpg" },
   "accent": "#99D52A"
 }

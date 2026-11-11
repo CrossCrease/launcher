@@ -4,5 +4,6 @@
   "system": "PlayStation 4",
   "status": "planned",
   "description": "NHL 23 is planned for a future CrossCrease release.",
+  "cover_download": { "source": "wikipedia", "file": "NHL-23-Cover.jpg" },
   "accent": "#D6409F"
 }

@@ -4,5 +4,6 @@
   "system": "PlayStation 4",
   "status": "planned",
   "description": "NHL 18 is planned for a future CrossCrease release.",
+  "cover_download": { "source": "wikipedia", "file": "NHL 18 cover.jpg" },
   "accent": "#FFB224"
 }

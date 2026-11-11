@@ -4,5 +4,6 @@
   "system": "PlayStation 5",
   "status": "planned",
   "description": "NHL 26 is planned for a future CrossCrease release.",
+  "cover_download": { "source": "wikipedia", "file": "NHL 26 cover art.jpg" },
   "accent": "#00A2C7"
 }

@@ -11,5 +11,6 @@
     "%USERPROFILE%\\Games\\NHL 24",
     "{launcher}\\games\\nhl24"
   ],
+  "cover_download": { "source": "wikipedia", "file": "NHL 24 cover art.jpg" },
   "accent": "#4D74FF"
 }

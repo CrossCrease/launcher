@@ -61,6 +61,7 @@ namespace CrossCrease
         // Runs at startup and on Refresh. Network problems are reported on the affected game only.
         void BeginUpdateCheck()
         {
+            BeginCoverSync(false);
             if (checkingFeeds) return;
             var targets = new List<KeyValuePair<string, string>>();
             foreach (var item in items)

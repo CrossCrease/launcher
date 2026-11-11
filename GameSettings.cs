@@ -93,7 +93,7 @@ namespace CrossCrease
                 var item = Item;
                 if (item == null) return "gone";
                 var parts = new List<string> { item.State.ToString(), item.Root ?? "", owner.HasSavedLocation(item.Profile).ToString(),
-                    owner.checkingFeeds ? "checking" : "idle", owner.UserCoverPath(item.Profile) ?? "" };
+                    owner.checkingFeeds ? "checking" : "idle", owner.UserCoverPath(item.Profile) ?? "", owner.DownloadedCoverPath(item.Profile) ?? "" };
                 if (owner.IsInstalling(item)) { parts.Add(owner.installing.Phase); parts.Add(owner.installing.Detail); }
                 foreach (var id in owner.AllPackageIds(item.Profile)) parts.Add(id + "=" + owner.packages.InstalledVersion(item.Profile.id, id));
                 PackageFeed feed;
@@ -314,8 +314,9 @@ namespace CrossCrease
             void AddCover(LibraryItem item)
             {
                 bool custom = owner.UserCoverPath(item.Profile) != null;
-                Heading("Cover", "The cover shown in the library. Your own images stay on this PC.");
-                Value(custom ? "Using your own image." : "Using the CrossCrease cover.", Ui.Muted);
+                string downloaded = owner.DownloadedCoverDescription(item.Profile);
+                Heading("Cover", "The cover shown in the library. Covers are downloaded to and kept on this PC only.");
+                Value(custom ? "Using your own image." : downloaded != null ? "Using " + downloaded + "." : "Using the CrossCrease cover.", Ui.Muted);
                 var buttons = new List<FlatButton> { Button("Choose image…", ButtonKind.Secondary, item.Accent, delegate { owner.ChooseCover(Item); }) };
                 if (custom) buttons.Add(Button("Reset cover", ButtonKind.Secondary, item.Accent, delegate { owner.ResetCover(Item); }));
                 PlaceButtons(buttons.ToArray(), false);

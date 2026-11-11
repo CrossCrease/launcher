@@ -48,6 +48,8 @@ namespace CrossCrease
         public string[] search_roots { get; set; }
         public string accent { get; set; }
         public string cover { get; set; }
+        // Where the official cover is downloaded from on the player's PC (never bundled).
+        public CoverDownload cover_download { get; set; }
         // Downloadable packages (runtime, online files, ...) published by the game project.
         public string package_feed { get; set; }
         public string[] packages { get; set; }
@@ -1980,7 +1982,7 @@ namespace CrossCrease
             Image image;
             if (customCovers.TryGetValue(profile.id, out image)) return image;
             image = null;
-            string path = UserCoverPath(profile) ?? ProfileCoverPath(profile);
+            string path = UserCoverPath(profile) ?? DownloadedCoverPath(profile) ?? ProfileCoverPath(profile);
             if (path != null)
             {
                 try
@@ -2064,6 +2066,7 @@ namespace CrossCrease
             try { RemoveUserCovers(item.Profile); }
             catch (Exception ex) { MessageBox.Show(DialogOwner, ex.Message, "Could not reset cover", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             LoadProfiles(item.Profile.id);
+            BeginCoverSync(false);
         }
 
         void RemoveUserCovers(GameProfile profile)

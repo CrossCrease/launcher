@@ -12,6 +12,7 @@ All notable changes to the CrossCrease launcher are documented here. The launche
 - New profile fields `package_feed`, `packages`, `launch_options`, `settings`, and path tokens `{data}`, `{package:<id>}`, `{setting:<id>}`.
 - `package.ps1` builds the launcher release ZIP, its feed and checksums.
 - `feeds.json` override for testing local feeds; `CROSSCREASE_DATA_DIRECTORY` for automated tests.
+- Automatic official covers: profiles name a cover source (`cover_download`), and the launcher downloads it on the player's PC into `%LOCALAPPDATA%\CrossCrease\covers\downloaded\`. Downloads are rate-limited and checked against a SHA-1 checksum, and covers are checked at most daily. The player's own cover always wins. All NHL profiles use their Wikipedia article's cover. Turn it off with `"download_covers": false` in `launcher.json`.
 - **Game settings** window per game, opened from a button that is always next to Play and from the top of the right-click menu. It brings together game files, CrossCrease downloads and updates, player settings (online ID, server) and the cover.
 - Per-game **Game files** choice: select the game's `eboot.bin` directly or a game folder (searched up to three levels deep), or go back to automatic detection. Picking an update folder resolves to the base game next to it.
 - The selection bar shows the detected PS4 title ID and version from `param.sfo`, and whether an update (`<game folder>-UPDATE` / `-patch`) was found.
