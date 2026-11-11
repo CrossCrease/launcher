@@ -1618,6 +1618,7 @@ namespace CrossCrease
             packages = new PackageStore(dataDirectory);
             LoadLocations();
             LoadFeedOverrides();
+            CleanUpPreviousLauncher();
 
             Text = "CrossCrease";
             AutoScaleMode = AutoScaleMode.None;
@@ -1742,7 +1743,7 @@ namespace CrossCrease
             topBar.ImportButton.Click += delegate { ImportProfile(); };
             topBar.RefreshButton.Click += delegate { ReloadProfiles(); };
             topBar.FolderButton.Click += delegate { OpenProfilesFolder(); };
-            topBar.UpdateButton.Click += delegate { OpenLauncherRelease(); };
+            topBar.UpdateButton.Click += delegate { UpdateLauncher(); };
 
             Controls.Add(library);
             Controls.Add(hero);

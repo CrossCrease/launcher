@@ -240,6 +240,21 @@ namespace CrossCrease
             }
         }
 
+        // Downloads and verifies a package from any feed (used for launcher updates) and extracts it into
+        // an empty destination folder.
+        public void DownloadAndExtract(PackageFeed feed, FeedPackage package, string destination, ProgressHandler progress)
+        {
+            string partial = Path.Combine(Path.GetTempPath(), "crosscrease-" + package.id + "-" + package.version + "-" + Guid.NewGuid().ToString("N") + ".part");
+            try
+            {
+                DownloadVerified(new Uri(feed.BaseUri, package.url), partial, package, progress);
+                if (Directory.Exists(destination)) Directory.Delete(destination, true);
+                progress(0, 1, "Installing");
+                Extract(partial, destination);
+            }
+            finally { TryDelete(partial); }
+        }
+
         void DownloadVerified(Uri uri, string target, FeedPackage package, ProgressHandler progress)
         {
             Uri ignored;

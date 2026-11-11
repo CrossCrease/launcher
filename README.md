@@ -2,6 +2,10 @@
 
 The CrossCrease launcher is a small Windows app that shows every CrossCrease game profile as a cover in one library. It downloads and updates the CrossCrease runtime each game needs, finds your own copy of the game, and starts it. Games that are ready appear in full colour. Games that still need a download, have not been found, or are planned for a future release stay visible in greyscale.
 
+## Installing
+
+Download `crosscrease-launcher-<version>-windows-x64.zip` from the [latest release](https://github.com/CrossCrease/launcher/releases/latest). Unzip it to a folder you own, for example `Documents\CrossCrease`, and start `CrossCrease.exe`. It needs Windows 10 or 11, and the .NET Framework 4.x that ships with Windows. From then on the launcher updates itself.
+
 ## Getting a game running
 
 1. **Select** the game's cover. The bar above the library shows what is needed next.
@@ -46,7 +50,7 @@ Each game project publishes its packages as GitHub release assets together with 
 
 - **At startup** (and on **Refresh**) the launcher reads the feed of every game that has one, plus the launcher's own feed. This happens in the background and never blocks the library. Without an internet connection the launcher works as before; affected games say that the download server could not be reached.
 - **Updates** are offered on the game's cover and in the selection bar. Updating keeps the previous version on disk for rollback and removes anything older.
-- **Launcher updates** show a **Get launcher x.y.z** button in the top bar that opens the release page.
+- **Launcher updates** show an **Update launcher to x.y.z** button in the top bar. It downloads the new release, checks its SHA-256, and replaces the launcher files. Profiles you imported are kept. Then it restarts. The previous version is kept as `CrossCrease.exe.old` until the next start. If the launcher sits in a folder it may not change (for example `Program Files`), the button opens the release page instead.
 - A feed may require a minimum launcher version. Older launchers then ask you to update the launcher first.
 - A game cannot be updated or have its files removed while it is running from those files.
 

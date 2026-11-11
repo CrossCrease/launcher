@@ -6,6 +6,7 @@ All notable changes to the CrossCrease launcher are documented here. The launche
 
 ### Added
 - In-launcher downloads: games whose profile has a `package_feed` show **Download** with the size. Packages are verified with SHA-256, installed per user under `%LOCALAPPDATA%\CrossCrease\games\<id>\packages\`, and kept separate from saves and settings.
+- Launcher self-update: **Update launcher to x.y.z** downloads the release, verifies it, swaps it in (imported profiles are kept), and restarts.
 - Update checks at startup and on Refresh for every game feed and for the launcher itself. Covers show "Update available", the selection bar offers **Update**, and the top bar offers a newer launcher. The previous package version is kept for rollback.
 - Extra launch options (for example **Play online**) with their own packages, plus per-game settings asked for once in a small dialog (**Game settings…** in the right-click menu).
 - Right-click actions: Check for updates, Open data folder, Remove downloaded files (keeps saves).

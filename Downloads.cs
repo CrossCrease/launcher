@@ -126,7 +126,8 @@ namespace CrossCrease
             bool newer = launcherFeed != null && !string.IsNullOrWhiteSpace(launcherFeed.release) &&
                 PackageStore.CompareVersions(launcherFeed.release, BuildInfo.Version) > 0;
             topBar.UpdateButton.Visible = newer;
-            if (newer) topBar.UpdateButton.Text = "Get launcher " + launcherFeed.release;
+            topBar.UpdateButton.Enabled = !updatingLauncher;
+            if (newer && !updatingLauncher) topBar.UpdateButton.Text = "Update launcher to " + launcherFeed.release;
             topBar.PerformLayout();
             topBar.Invalidate(true);
         }
