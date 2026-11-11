@@ -407,6 +407,26 @@ namespace CrossCrease
             }
         }
 
+        // Switches a package back to the version kept on disk. The newer version stays installed, so the
+        // update offered afterwards is applied without downloading again.
+        void RollBackPackage(LibraryItem item, string packageId)
+        {
+            if (item == null || installing != null) return;
+            string current = packages.InstalledVersion(item.Profile.id, packageId), previous = packages.PreviousVersion(item.Profile.id, packageId);
+            if (current == null || previous == null) return;
+            if (GameRunningFrom(item.Profile))
+            {
+                MessageBox.Show(DialogOwner, "Close " + item.Profile.name + " first.", item.Profile.name, MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            if (MessageBox.Show(DialogOwner, "Go back from " + current + " to " + previous + "?\n\n" + current + " stays on this PC, and the launcher offers it " +
+                    "again as an update (installed without a new download). Your saves and settings are kept.",
+                    "Roll back " + item.Profile.name, MessageBoxButtons.YesNo, MessageBoxIcon.Question) != DialogResult.Yes) return;
+            try { packages.RollBack(item.Profile.id, packageId); }
+            catch (Exception ex) { MessageBox.Show(DialogOwner, FriendlyError(ex), "Could not roll back", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            LoadProfiles(item.Profile.id);
+        }
+
         void OpenFolder(string folder)
         {
             if (Directory.Exists(folder)) Process.Start("explorer.exe", "\"" + folder + "\"");

@@ -54,7 +54,9 @@ Cover states:
 Each game project publishes its packages as GitHub release assets together with a small **feed** file that lists them. Feeds use stable `releases/latest/download/...` addresses, so the launcher always sees the newest release.
 
 - **At startup** (and on **Refresh**) the launcher reads the feed of every game that has one, plus the launcher's own feed. This happens in the background and never blocks the library. Without an internet connection the launcher works as before; affected games say that the download server could not be reached.
-- **Updates** are offered on the game's cover and in the selection bar. Updating keeps the previous version on disk for rollback and removes anything older.
+- **Updates** are offered on the game's cover and in the selection bar. Updating keeps the previous version on disk and removes anything older.
+- **Roll back to x.y.z** (Game settings → CrossCrease downloads) switches to the kept version. The newer one stays on disk, and updating to it again needs no download.
+- If a version folder is deleted by hand, the launcher repairs its records and uses the version that is still there. Normally you never need to touch the `packages` folder.
 - **Launcher updates** show an **Update launcher to x.y.z** button in the top bar. It downloads the new release, checks its SHA-256, and replaces the launcher files. Profiles you imported are kept. Then it restarts. The previous version is kept as `CrossCrease.exe.old` until the next start. If the launcher sits in a folder it may not change (for example `Program Files`), the button opens the release page instead.
 - A feed may require a minimum launcher version. Older launchers then ask you to update the launcher first.
 - A game cannot be updated or have its files removed while it is running from those files.

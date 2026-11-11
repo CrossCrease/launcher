@@ -24,7 +24,7 @@ namespace CrossCrease
     public static class BuildInfo
     {
         // Version source of truth for the launcher. Keep CHANGELOG.md in sync.
-        public const string Version = "0.5.0";
+        public const string Version = "0.5.1";
         // Launcher release feed (same format as game package feeds) checked at startup.
         public const string UpdateFeed = "https://github.com/CrossCrease/launcher/releases/latest/download/crosscrease-launcher-feed.json";
         public const string ReleasesPage = "https://github.com/CrossCrease/launcher/releases/latest";

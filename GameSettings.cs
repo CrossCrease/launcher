@@ -95,7 +95,8 @@ namespace CrossCrease
                 var parts = new List<string> { item.State.ToString(), item.Root ?? "", owner.HasSavedLocation(item.Profile).ToString(),
                     owner.checkingFeeds ? "checking" : "idle", owner.UserCoverPath(item.Profile) ?? "", owner.DownloadedCoverPath(item.Profile) ?? "" };
                 if (owner.IsInstalling(item)) { parts.Add(owner.installing.Phase); parts.Add(owner.installing.Detail); }
-                foreach (var id in owner.AllPackageIds(item.Profile)) parts.Add(id + "=" + owner.packages.InstalledVersion(item.Profile.id, id));
+                foreach (var id in owner.AllPackageIds(item.Profile))
+                    parts.Add(id + "=" + owner.packages.InstalledVersion(item.Profile.id, id) + "/" + owner.packages.PreviousVersion(item.Profile.id, id));
                 foreach (var toggle in owner.Toggles(item.Profile)) parts.Add(toggle.id + "=" + (owner.ToggleValue(item.Profile, toggle) ? "on" : "off"));
                 PackageFeed feed;
                 if (owner.feeds.TryGetValue(item.Profile.id, out feed)) parts.Add(feed.release);
@@ -220,6 +221,7 @@ namespace CrossCrease
                 owner.feeds.TryGetValue(profile.id, out feed);
                 var missing = new List<string>();
                 var updates = new List<string>();
+                var rollbacks = new List<KeyValuePair<string, string>>();
                 foreach (var id in owner.AllPackageIds(profile))
                 {
                     var offered = feed != null ? feed.Find(id) : null;
@@ -240,6 +242,12 @@ namespace CrossCrease
                         color = Ui.Blue;
                     }
                     else line = name + ": " + installed + " installed" + (offered != null ? " (latest)" : "");
+                    string kept = owner.packages.PreviousVersion(profile.id, id);
+                    if (installed != null && kept != null)
+                    {
+                        line += " · " + kept + " kept for rollback";
+                        rollbacks.Add(new KeyValuePair<string, string>(id, name + " " + kept));
+                    }
                     Value(line, color);
                 }
 
@@ -262,6 +270,14 @@ namespace CrossCrease
                 {
                     var b = Button(MainForm.WithSize("Update", owner.DownloadSize(feed, updates)), ButtonKind.Primary, item.Accent,
                         delegate { owner.InstallPackages(Item, updates); });
+                    b.Enabled = !busy;
+                    buttons.Add(b);
+                }
+                foreach (var rollback in rollbacks)
+                {
+                    var target = rollback;
+                    var b = Button("Roll back to " + target.Value.Substring(target.Value.LastIndexOf(' ') + 1), ButtonKind.Secondary, item.Accent,
+                        delegate { owner.RollBackPackage(Item, target.Key); });
                     b.Enabled = !busy;
                     buttons.Add(b);
                 }

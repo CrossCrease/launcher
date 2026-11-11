@@ -51,6 +51,7 @@ namespace CrossCrease
         public string version { get; set; }
         public string previous { get; set; }
         public string sha256 { get; set; }
+        public string previous_sha256 { get; set; }
         public string installed { get; set; }
     }
 
@@ -105,20 +106,109 @@ namespace CrossCrease
             return new Dictionary<string, InstalledPackage>(StringComparer.OrdinalIgnoreCase);
         }
 
+        // Serialises registry changes between the UI thread and download threads.
+        static readonly object RegistryLock = new object();
+
+        // The installed entry for a package, repaired when installed.json no longer matches the folders
+        // (for example after a version folder was deleted by hand): it falls back to the kept previous
+        // version, or to the newest remaining version folder. Returns null when nothing usable is left.
+        InstalledPackage Resolve(string gameId, string packageId)
+        {
+            if (!SafeName.IsMatch(packageId ?? "")) return null;
+            lock (RegistryLock)
+            {
+                var registry = Installed(gameId);
+                InstalledPackage entry;
+                registry.TryGetValue(packageId, out entry);
+                string packageDir = Path.Combine(PackagesDirectory(gameId), packageId);
+                var versions = VersionFolders(packageDir);
+                if (entry != null && SafeName.IsMatch(entry.version ?? "") && versions.Contains(entry.version))
+                {
+                    if (entry.previous != null && !versions.Contains(entry.previous))
+                    {
+                        entry.previous = null;
+                        entry.previous_sha256 = null;
+                        TryWriteRegistry(gameId, registry);
+                    }
+                    return entry;
+                }
+                if (versions.Count == 0)
+                {
+                    if (entry != null && registry.Remove(packageId)) TryWriteRegistry(gameId, registry);
+                    return null;
+                }
+                bool usePrevious = entry != null && entry.previous != null && versions.Contains(entry.previous);
+                string chosen = usePrevious ? entry.previous : versions[0];
+                string other = null;
+                foreach (var version in versions) if (version != chosen) { other = version; break; }
+                var healed = new InstalledPackage {
+                    version = chosen, sha256 = usePrevious ? entry.previous_sha256 : null,
+                    previous = other, installed = DateTime.UtcNow.ToString("o")
+                };
+                registry[packageId] = healed;
+                TryWriteRegistry(gameId, registry);
+                return healed;
+            }
+        }
+
+        // Non-empty version folders of a package, newest first. Staging folders start with a dot.
+        static List<string> VersionFolders(string packageDir)
+        {
+            var versions = new List<string>();
+            try
+            {
+                if (!Directory.Exists(packageDir)) return versions;
+                foreach (var folder in Directory.GetDirectories(packageDir))
+                {
+                    string name = Path.GetFileName(folder);
+                    if (SafeName.IsMatch(name) && Directory.GetFileSystemEntries(folder).Length > 0) versions.Add(name);
+                }
+            }
+            catch { }
+            versions.Sort(delegate(string a, string b) { return CompareVersions(b, a); });
+            return versions;
+        }
+
         // Folder of the installed package, or null when it is not installed (or its files are gone).
         public string InstalledPath(string gameId, string packageId)
         {
-            InstalledPackage entry;
-            if (!SafeName.IsMatch(packageId ?? "") || !Installed(gameId).TryGetValue(packageId, out entry) || !SafeName.IsMatch(entry.version ?? ""))
-                return null;
-            string path = Path.Combine(PackagesDirectory(gameId), packageId, entry.version);
-            return Directory.Exists(path) ? path : null;
+            var entry = Resolve(gameId, packageId);
+            return entry == null ? null : Path.Combine(PackagesDirectory(gameId), packageId, entry.version);
         }
 
         public string InstalledVersion(string gameId, string packageId)
         {
-            InstalledPackage entry;
-            return InstalledPath(gameId, packageId) != null && Installed(gameId).TryGetValue(packageId, out entry) ? entry.version : null;
+            var entry = Resolve(gameId, packageId);
+            return entry == null ? null : entry.version;
+        }
+
+        // The version kept for rollback, if its files are still there.
+        public string PreviousVersion(string gameId, string packageId)
+        {
+            var entry = Resolve(gameId, packageId);
+            return entry == null ? null : entry.previous;
+        }
+
+        // Switches to the kept previous version. The current one stays on disk, so going forward again
+        // (Update) does not need a new download.
+        public void RollBack(string gameId, string packageId)
+        {
+            lock (RegistryLock)
+            {
+                var entry = Resolve(gameId, packageId);
+                if (entry == null || entry.previous == null) throw new PackageException("There is no earlier version to go back to.");
+                var registry = Installed(gameId);
+                registry[packageId] = new InstalledPackage {
+                    version = entry.previous, sha256 = entry.previous_sha256,
+                    previous = entry.version, previous_sha256 = entry.sha256, installed = DateTime.UtcNow.ToString("o")
+                };
+                WriteRegistry(gameId, registry);
+            }
+        }
+
+        void TryWriteRegistry(string gameId, Dictionary<string, InstalledPackage> registry)
+        {
+            try { WriteRegistry(gameId, registry); } catch { }
         }
 
         public bool HasPackages(string gameId)
@@ -207,6 +297,20 @@ namespace CrossCrease
             string partial = Path.Combine(downloads, package.id + "-" + package.version + ".part");
             string staging = Path.Combine(packageDir, ".staging-" + package.version);
             string final = Path.Combine(packageDir, package.version);
+
+            // After a rollback the newer version is still on disk: switch back to it without downloading.
+            lock (RegistryLock)
+            {
+                var current = Resolve(gameId, package.id);
+                if (current != null && current.previous == package.version && !string.IsNullOrEmpty(current.previous_sha256) &&
+                    string.Equals(current.previous_sha256, package.sha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    progress(1, 1, "Installing");
+                    RollBack(gameId, package.id);
+                    return;
+                }
+            }
+
             try
             {
                 DownloadVerified(new Uri(feed.BaseUri, package.url), partial, package, progress);
@@ -222,14 +326,23 @@ namespace CrossCrease
                 if (Directory.Exists(staging)) try { Directory.Delete(staging, true); } catch { }
             }
 
-            var registry = Installed(gameId);
-            InstalledPackage old;
-            string previous = registry.TryGetValue(package.id, out old) && old.version != package.version ? old.version : (old != null ? old.previous : null);
-            registry[package.id] = new InstalledPackage {
-                version = package.version, previous = previous, sha256 = package.sha256.ToLowerInvariant(),
-                installed = DateTime.UtcNow.ToString("o")
-            };
-            WriteRegistry(gameId, registry);
+            string previous = null, previousSha = null;
+            lock (RegistryLock)
+            {
+                var registry = Installed(gameId);
+                InstalledPackage old;
+                if (registry.TryGetValue(package.id, out old))
+                {
+                    bool replaced = old.version != package.version;
+                    previous = replaced ? old.version : old.previous;
+                    previousSha = replaced ? old.sha256 : old.previous_sha256;
+                }
+                registry[package.id] = new InstalledPackage {
+                    version = package.version, previous = previous, sha256 = package.sha256.ToLowerInvariant(),
+                    previous_sha256 = previousSha, installed = DateTime.UtcNow.ToString("o")
+                };
+                WriteRegistry(gameId, registry);
+            }
 
             // Keep the new version and the one before it (for rollback); remove anything older.
             foreach (var folder in Directory.GetDirectories(packageDir))

@@ -2,6 +2,15 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.5.1
+
+### Added
+- **Roll back to x.y.z** in Game settings → CrossCrease downloads switches a package back to the version kept on disk. The newer version stays installed, so the update offered afterwards is applied instantly, without downloading again.
+
+### Fixed
+- The launcher repairs `installed.json` when it no longer matches the version folders (for example after a folder was deleted by hand). It falls back to the kept previous version or the newest remaining one, instead of asking to set the game up again.
+- Install-state changes from download threads and the window can no longer interleave.
+
 ## 0.5.0 — Game-first setup
 
 ### Added
