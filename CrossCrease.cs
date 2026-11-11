@@ -24,7 +24,7 @@ namespace CrossCrease
     public static class BuildInfo
     {
         // Version source of truth for the launcher. Keep CHANGELOG.md in sync.
-        public const string Version = "0.4.1";
+        public const string Version = "0.5.0";
         // Launcher release feed (same format as game package feeds) checked at startup.
         public const string UpdateFeed = "https://github.com/CrossCrease/launcher/releases/latest/download/crosscrease-launcher-feed.json";
         public const string ReleasesPage = "https://github.com/CrossCrease/launcher/releases/latest";
@@ -54,6 +54,7 @@ namespace CrossCrease
         public string package_feed { get; set; }
         public string[] packages { get; set; }
         public LaunchOption[] launch_options { get; set; }
+        public LaunchToggle[] toggles { get; set; }
         public ProfileSetting[] settings { get; set; }
         public string SourceFile { get; set; }
     }
@@ -281,8 +282,8 @@ namespace CrossCrease
             switch (item.State)
             {
                 case GameState.Ready: return "Ready to play";
-                case GameState.Missing: return "Not found";
-                case GameState.NeedsDownload: return "Download needed";
+                case GameState.Missing: return "Set up";
+                case GameState.NeedsDownload: return "Set up";
                 default: return "Coming soon";
             }
         }
@@ -293,8 +294,8 @@ namespace CrossCrease
             switch (item.State)
             {
                 case GameState.Ready: return "Ready to play";
-                case GameState.Missing: return "Game not found";
-                case GameState.NeedsDownload: return "Download needed";
+                case GameState.Missing: return "Ready to set up";
+                case GameState.NeedsDownload: return "Ready to set up";
                 default: return "Coming soon";
             }
         }
@@ -305,7 +306,7 @@ namespace CrossCrease
             switch (item.State)
             {
                 case GameState.Ready: return Green;
-                case GameState.Missing: return Amber;
+                case GameState.Missing: return Blue;
                 case GameState.NeedsDownload: return Blue;
                 default: return Dim;
             }
@@ -1879,7 +1880,7 @@ namespace CrossCrease
                     primary.Accent = item.Accent;
                     primary.Enabled = true;
                     hero.Detail = string.IsNullOrWhiteSpace(item.Root) ? item.Executable : item.Root;
-                    string version = GameVersionSummary(item.Root);
+                    string version = GameVersionText(item);
                     if (version != null) hero.Detail = version + " · " + hero.Detail;
                     var buttons = new List<FlatButton> { primary };
                     buttons.AddRange(LaunchOptionButtons(item));
@@ -1889,15 +1890,8 @@ namespace CrossCrease
                     hero.SetButtons(buttons.ToArray());
                     break;
                 case GameState.NeedsDownload:
-                    ShowDownloadHero(item);
-                    break;
                 case GameState.Missing:
-                    primary.Text = "Locate game";
-                    primary.Enabled = true;
-                    hero.Detail = GameFileRelative(item.Profile) != null
-                        ? "Select the game's " + Path.GetFileName(GameFileRelative(item.Profile)) + " or its folder once."
-                        : "Select the game's folder once.";
-                    hero.SetButtons(primary, hero.SettingsButton);
+                    ShowSetupHero(item);
                     break;
                 default:
                     primary.Text = "Coming soon";
@@ -1913,8 +1907,7 @@ namespace CrossCrease
         {
             if (item == null) { ImportProfile(); return; }
             if (item.State == GameState.Ready) LaunchGame(item, null);
-            else if (item.State == GameState.Missing) LocateGame(item);
-            else if (item.State == GameState.NeedsDownload) DownloadButtonClicked(item);
+            else if (item.State == GameState.Missing || item.State == GameState.NeedsDownload) RunSetup(item);
         }
 
         void ShowItemMenu(LibraryItem item, Point screen)
@@ -1939,6 +1932,7 @@ namespace CrossCrease
                 menu.Items.Add(files);
                 AddMenuItem("Open game folder", delegate { OpenGameFolder(item); }).Enabled = Directory.Exists(GameFolder(item));
                 AddPackageMenuItems(item);
+                AddToggleMenuItems(item);
                 menu.Items.Add(new ToolStripSeparator());
             }
             AddMenuItem("Choose cover image…", delegate { ChooseCover(item); });
@@ -2246,7 +2240,7 @@ namespace CrossCrease
             {
                 if (!string.IsNullOrWhiteSpace(workingDirectory)) Directory.CreateDirectory(workingDirectory);
                 Process.Start(new ProcessStartInfo(executable) {
-                    Arguments = ProfileArguments(profile, option != null ? option.arguments_template : null),
+                    Arguments = ProfileArguments(profile, option != null ? option.arguments_template : null) + ToggleArguments(item, option != null ? option.id : "play"),
                     WorkingDirectory = workingDirectory,
                     UseShellExecute = false
                 });

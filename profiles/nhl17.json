@@ -37,6 +37,17 @@
       "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -ConnectionDirectory \"{package:online}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\""
     }
   ],
+  "toggles": [
+    {
+      "id": "use_update",
+      "label": "Start with the game update",
+      "description": "Uses the update next to the game (for example 1.08). Turn it off to play the base game. Play online always uses the update.",
+      "default": true,
+      "requires": "game_update",
+      "arguments_off": "-BaseOnly",
+      "launches": ["play"]
+    }
+  ],
   "cover_download": { "source": "wikipedia", "file": "NHL 17 cover art.jpg" },
   "accent": "#27C9B3"
 }

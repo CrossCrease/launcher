@@ -57,11 +57,11 @@ namespace CrossCrease
             return entry;
         }
 
-        void ChooseGameFile(LibraryItem item)
+        bool ChooseGameFile(LibraryItem item)
         {
             var profile = item.Profile;
             string relative = GameFileRelative(profile);
-            if (relative == null) { ChooseGameFolder(item); return; }
+            if (relative == null) return ChooseGameFolder(item);
             string fileName = Path.GetFileName(relative);
             using (var dialog = new OpenFileDialog {
                 Title = "Select " + fileName + " for " + profile.name,
@@ -71,7 +71,7 @@ namespace CrossCrease
             })
             {
                 if (!string.IsNullOrWhiteSpace(item.Root) && Directory.Exists(item.Root)) dialog.InitialDirectory = item.Root;
-                if (dialog.ShowDialog(DialogOwner) != DialogResult.OK) return;
+                if (dialog.ShowDialog(DialogOwner) != DialogResult.OK) return false;
                 string root = RootFromFile(profile, dialog.FileName);
                 if (root == null)
                 {
@@ -79,13 +79,14 @@ namespace CrossCrease
                         relative + " inside the base game folder, next to the game's other files. An update belongs in a folder " +
                         "named like the game folder plus \"-UPDATE\", right next to it.", "Game not found",
                         MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    return false;
                 }
                 SaveGameLocation(item, root);
+                return true;
             }
         }
 
-        void ChooseGameFolder(LibraryItem item)
+        bool ChooseGameFolder(LibraryItem item)
         {
             var profile = item.Profile;
             using (var dialog = new FolderBrowserDialog {
@@ -94,7 +95,7 @@ namespace CrossCrease
             })
             {
                 if (!string.IsNullOrWhiteSpace(item.Root) && Directory.Exists(item.Root)) dialog.SelectedPath = item.Root;
-                if (dialog.ShowDialog(DialogOwner) != DialogResult.OK) return;
+                if (dialog.ShowDialog(DialogOwner) != DialogResult.OK) return false;
                 string root = RootFromFolder(profile, dialog.SelectedPath);
                 if (root == null)
                 {
@@ -102,9 +103,10 @@ namespace CrossCrease
                     MessageBox.Show(DialogOwner, "CrossCrease could not find " + expected + " in that folder or the folders inside it.\n\n" +
                         "Select the game folder, or use Select " + Path.GetFileName(expected) + "… to point at the file directly.",
                         "Game not found", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                    return;
+                    return false;
                 }
                 SaveGameLocation(item, root);
+                return true;
             }
         }
 
@@ -183,27 +185,6 @@ namespace CrossCrease
         }
 
         // ----- Game version (PS4 param.sfo) ------------------------------------------------------
-
-        // Describes the located game for the selection bar, e.g. "CUSA04326 · 01.08 (update)".
-        // shadPS4 applies an update only from "<game folder>-UPDATE" or "<game folder>-patch".
-        static string GameVersionSummary(string root)
-        {
-            if (string.IsNullOrWhiteSpace(root)) return null;
-            var baseInfo = ReadParamSfo(Path.Combine(root, "sce_sys", "param.sfo"));
-            if (baseInfo == null) return null;
-            string titleId, version;
-            baseInfo.TryGetValue("TITLE_ID", out titleId);
-            baseInfo.TryGetValue("APP_VER", out version);
-            string trimmed = root.TrimEnd(Path.DirectorySeparatorChar);
-            foreach (var suffix in new[] { "-UPDATE", "-patch" })
-            {
-                var update = ReadParamSfo(Path.Combine(trimmed + suffix, "sce_sys", "param.sfo"));
-                string updateVersion;
-                if (update != null && update.TryGetValue("APP_VER", out updateVersion) && !string.IsNullOrWhiteSpace(updateVersion))
-                    return Join(titleId, "version " + updateVersion + " (update installed)");
-            }
-            return Join(titleId, string.IsNullOrWhiteSpace(version) ? "no update found" : "version " + version + ", no update found");
-        }
 
         static string Join(string a, string b)
         {

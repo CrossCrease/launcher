@@ -8,9 +8,15 @@ Download `crosscrease-launcher-<version>-windows-x64.zip` from the [latest relea
 
 ## Getting a game running
 
-1. **Select** the game's cover. The bar above the library shows what is needed next.
-2. **Download** installs the CrossCrease runtime for that game (for NHL 17: the adjusted shadPS4 build, its default configuration and launch scripts). The button shows the download size. Files are checked against a SHA-256 checksum before they are installed.
-3. **Locate game** appears if CrossCrease cannot find your copy of the game. Choose either:
+Supported games that are not ready yet show **Set up** on their cover. Select the cover; the bar above the library shows the two steps and the button for the next one.
+
+1. **Your game files** come first. **Set up NHL 17** asks for the game's `eboot.bin`. This step is skipped when CrossCrease already found the game.
+2. **The CrossCrease runtime** downloads right after that (for NHL 17: the adjusted shadPS4 build, its default configuration and launch scripts). If your game was already found, the button reads **Download runtime (29.8 MB)**. Files are checked against a SHA-256 checksum before they are installed.
+3. Then the game is **Ready to play**.
+
+The base game is all you need. An update (for example NHL 17 1.08) is optional and used when it is present. **Start with the game update** in **Game settings**, or in the cover's right-click menu, switches between the update and the base game for **Play**.
+
+You can also choose your game files at any time in **Game settings**:
    - **Select eboot.bin…**: point directly at the game's `eboot.bin`. The folder that contains it becomes the game folder.
    - **Select game folder…**: choose the game folder, or a folder up to three levels above it (for example a "Games" folder). CrossCrease finds the game inside.
 
@@ -31,7 +37,7 @@ CrossCrease never downloads or distributes game files, firmware, keys or saves. 
   - **CrossCrease downloads**: installed and available versions, **Download** / **Update**, **Check for updates**, **Remove downloads…**, **Open saves & data folder**.
   - **Player settings**: values such as your online ID and server, with **Save player settings**.
   - **Cover**: **Choose image…** and **Reset cover**.
-- **Right-click** a cover for quick actions: game settings, play, locate game, open the game folder, check for updates, remove downloads, and the cover image.
+- **Right-click** a cover for quick actions: game settings, play, game files, start with the game update, open the game folder, check for updates, remove downloads, and the cover image.
 - Arrow keys move through the library. **F5** or **Refresh** rescans the profiles folder and checks for updates.
 
 Cover states:
@@ -40,8 +46,7 @@ Cover states:
 | --- | --- | --- |
 | Ready to play | Colour, green dot | The game, its required files and its downloads are present. |
 | Update available | Colour, blue dot | A newer runtime or online package is available. Select the game and choose **Update**. |
-| Download needed | Greyscale, blue dot | The CrossCrease runtime for this game is not installed yet. |
-| Not found | Greyscale, amber dot | The game itself has not been found or located yet. |
+| Set up | Greyscale, blue dot | A supported game that still needs your game files and/or the CrossCrease runtime. |
 | Coming soon | Greyscale | The title is on the CrossCrease roadmap but not supported yet. |
 
 ## Downloads and updates
@@ -175,6 +180,7 @@ Both use the .NET Framework 4 `csc.exe` that ships with Windows; nothing else ne
 - `package_feed` (optional) is the feed URL. `packages` lists the package ids that must be installed before **Play** is offered.
 - `launch_options` (optional) add buttons next to Play. Each may list its own `packages` and `settings`, and may override `executable`, `arguments_template` and `working_directory`.
 - `settings` (optional) are values asked for once in a small dialog and saved per user. `pattern` is a regular expression the value must match; values can never contain quotes. `default` pre-fills the field.
+- `toggles` (optional) are per-game on/off choices, shown in **Game settings** and the right-click menu. Each has an `id`, `label`, `description` and `default`. `arguments_on` / `arguments_off` are appended to the launch command. `launches` lists the launches it applies to (`"play"` is the main Play button; other values are `launch_options` ids). `"requires": "game_update"` only offers the toggle when an update folder (`<game folder>-UPDATE` or `-patch`) exists. NHL 17 uses this for **Start with the game update** (off adds `-BaseOnly`).
 - Paths and argument templates support Windows environment variables and these tokens:
   - `{launcher}`: the launcher folder.
   - `{data}`: the game's per-user data folder.
@@ -196,7 +202,7 @@ Use **Import profile** to copy another JSON profile into the launcher, or place 
 - **"No download has been published for this game yet":** the game project has no release with a feed yet. Developers can test with a local feed (see above).
 - **"Could not reach the download server":** check your internet connection, then press **Refresh**. Already-installed games still start.
 - **"Failed its integrity check":** the download was damaged or changed. Nothing was installed; try again.
-- **A game stays grey after installing it:** select it, open **Game settings**, and choose **Select eboot.bin…** (or **Select folder…**).
-- **The selection bar says "no update found":** move the update next to the base game folder and give it the same name plus `-UPDATE`.
+- **A game still says Set up:** select it and press the button in the bar. It names the step that is missing (your game files or the runtime download).
+- **The game starts without its update:** the update must sit next to the base game folder, with the same name plus `-UPDATE`, and **Start with the game update** must be on in **Game settings**.
 - **A custom cover does not appear:** make sure it is a PNG, JPG, or BMP file, then use **Refresh**.
 - **No covers appear:** check that `profiles\*.json` sits next to `CrossCrease.exe` and contains valid JSON.

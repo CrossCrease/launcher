@@ -96,6 +96,7 @@ namespace CrossCrease
                     owner.checkingFeeds ? "checking" : "idle", owner.UserCoverPath(item.Profile) ?? "", owner.DownloadedCoverPath(item.Profile) ?? "" };
                 if (owner.IsInstalling(item)) { parts.Add(owner.installing.Phase); parts.Add(owner.installing.Detail); }
                 foreach (var id in owner.AllPackageIds(item.Profile)) parts.Add(id + "=" + owner.packages.InstalledVersion(item.Profile.id, id));
+                foreach (var toggle in owner.Toggles(item.Profile)) parts.Add(toggle.id + "=" + (owner.ToggleValue(item.Profile, toggle) ? "on" : "off"));
                 PackageFeed feed;
                 if (owner.feeds.TryGetValue(item.Profile.id, out feed)) parts.Add(feed.release);
                 string error;
@@ -167,8 +168,8 @@ namespace CrossCrease
                 if (item.GameFound)
                 {
                     Value(item.Root, Ui.Text);
-                    string version = MainForm.GameVersionSummary(item.Root);
-                    if (version != null) Value(version, version.Contains("no update") ? Ui.Amber : Ui.Muted);
+                    string version = owner.GameVersionText(item);
+                    if (version != null) Value(version, Ui.Muted);
                     Value(owner.HasSavedLocation(item.Profile) ? "Chosen by you." : "Found automatically.", Ui.Dim);
                 }
                 else
@@ -185,7 +186,30 @@ namespace CrossCrease
                 if (item.GameFound)
                     buttons.Add(Button("Open folder", ButtonKind.Ghost, item.Accent, delegate { owner.OpenGameFolder(Item); }));
                 PlaceButtons(buttons.ToArray(), false);
-                Note("Updates go next to the game in a folder with the same name plus \"-UPDATE\".");
+                AddToggles(item);
+                Note("The base game is enough to play. An update is optional: put it next to the game in a folder with the same name plus \"-UPDATE\".");
+            }
+
+            void AddToggles(LibraryItem item)
+            {
+                foreach (var toggle in owner.Toggles(item.Profile))
+                {
+                    bool available = owner.ToggleAvailable(item, toggle);
+                    var captured = toggle;
+                    var box = new CheckBox {
+                        Text = toggle.label ?? toggle.id, Checked = owner.ToggleValue(item.Profile, toggle), Enabled = available,
+                        AutoSize = true, Location = new Point(Pad, y), ForeColor = available ? Ui.Text : Ui.Dim,
+                        FlatStyle = FlatStyle.Flat, Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold)
+                    };
+                    box.CheckedChanged += delegate { owner.SetToggle(Item, captured, box.Checked); };
+                    content.Controls.Add(box);
+                    y += box.PreferredSize.Height + Ui.S(4);
+                    string description = toggle.description ?? "";
+                    if (!available && string.Equals(toggle.requires, "game_update", StringComparison.OrdinalIgnoreCase))
+                        description = "No update was found next to the game, so the base game is used." + (description.Length > 0 ? " " + description : "");
+                    if (description.Length > 0) Note(description);
+                    y += Ui.S(4);
+                }
             }
 
             void AddDownloads(LibraryItem item)

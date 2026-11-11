@@ -227,57 +227,6 @@ namespace CrossCrease
 
         // ----- Selection bar -------------------------------------------------------------------
 
-        void ShowDownloadHero(LibraryItem item)
-        {
-            var primary = hero.PrimaryButton;
-            primary.Accent = item.Accent;
-            var buttons = new List<FlatButton> { primary };
-            buttons.Add(hero.SettingsButton);
-            PackageFeed feed;
-            string error;
-            if (FeedUrl(item.Profile) == null)
-            {
-                primary.Text = "Download unavailable";
-                primary.Enabled = false;
-                hero.Detail = "This profile does not say where to download its files.";
-            }
-            else if (!feeds.TryGetValue(item.Profile.id, out feed))
-            {
-                if (checkingFeeds)
-                {
-                    primary.Text = "Checking…";
-                    primary.Enabled = false;
-                    hero.Detail = "Looking for the latest " + item.Profile.name + " download.";
-                }
-                else
-                {
-                    primary.Text = "Try again";
-                    primary.Enabled = true;
-                    hero.Detail = feedErrors.TryGetValue(item.Profile.id, out error) ? error : "The download list is not available.";
-                }
-            }
-            else if (LauncherTooOld(feed))
-            {
-                primary.Text = "Get launcher update";
-                primary.Enabled = true;
-                hero.Detail = "This download needs CrossCrease launcher " + feed.minimum_launcher + " or newer.";
-            }
-            else
-            {
-                var names = new List<string>();
-                foreach (var id in item.MissingPackages)
-                {
-                    var package = feed.Find(id);
-                    names.Add(package == null ? id : (package.name ?? id) + " " + package.version);
-                }
-                primary.Text = WithSize("Download", DownloadSize(feed, item.MissingPackages));
-                primary.Enabled = true;
-                hero.Detail = "Installs " + string.Join(", ", names.ToArray()) + "." +
-                    (item.GameFound ? "" : " You also need your own copy of the game.");
-            }
-            hero.SetButtons(buttons.ToArray());
-        }
-
         void DownloadButtonClicked(LibraryItem item)
         {
             PackageFeed feed;

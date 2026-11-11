@@ -2,6 +2,15 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.5.0 — Game-first setup
+
+### Added
+- **Set up** state for supported games that are not ready yet. It replaces "Download needed" and "Not found". The selection bar lists the two steps (your game files, then the CrossCrease runtime). **Set up NHL 17** asks for `eboot.bin` and then downloads the runtime straight away; a step that is already done is skipped.
+- Per-game toggles (`toggles` in profiles). NHL 17's **Start with the game update** chooses between the update and the base game for Play. It is in Game settings and the right-click menu, and is only offered when an update is present.
+
+### Changed
+- Game updates are optional and shown as information: "version 01.08 (update)", "base game 01.00", or "base game 01.00 (update 01.08 turned off)". A missing update is no longer highlighted as a problem.
+
 ## 0.4.1
 
 ### Changed
