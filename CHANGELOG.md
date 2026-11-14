@@ -2,6 +2,16 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.7.0 — Online passwords
+
+### Added
+- NHL 17 asks for a **Password** together with your online ID. The CrossCrease server makes it your online ID's password the first time you sign in with it, so nobody else can play under your name or use your HUT team and stats. Change it under **Player settings**.
+- Profile setting field `secret`: masked input, stored encrypted for the Windows user (DPAPI) in the game's `settings.json`.
+
+### Changed
+- NHL 17 needs runtime 0.3.0 or newer, which passes the password to the server.
+- Environment variables in a profile's `arguments_template` are expanded before setting values are inserted. A setting value containing `%` is no longer changed.
+
 ## 0.6.0 — One Play button, install from .pkg
 
 ### Changed

@@ -24,7 +24,7 @@ namespace CrossCrease
     public static class BuildInfo
     {
         // Version source of truth for the launcher. Keep CHANGELOG.md in sync.
-        public const string Version = "0.6.0";
+        public const string Version = "0.7.0";
         // Launcher release feed (same format as game package feeds) checked at startup.
         public const string UpdateFeed = "https://github.com/CrossCrease/launcher/releases/latest/download/crosscrease-launcher-feed.json";
         public const string ReleasesPage = "https://github.com/CrossCrease/launcher/releases/latest";
@@ -86,6 +86,9 @@ namespace CrossCrease
         public string description { get; set; }
         public string pattern { get; set; }
         public string @default { get; set; }
+        // A password or other secret: typed into a masked box and stored encrypted for the
+        // Windows user (DPAPI) in the game's settings.json.
+        public bool secret { get; set; }
     }
 
     public enum GameState { Ready, Missing, NeedsDownload, Planned }
@@ -2234,7 +2237,7 @@ namespace CrossCrease
                 template = string.IsNullOrWhiteSpace(profile.arguments_template) ? (profile.arguments ?? "") : profile.arguments_template;
             string root = ProfileRoot(profile);
             string executable = ProfileExecutable(profile);
-            return Environment.ExpandEnvironmentVariables(ExpandTokens(profile, template) ?? "")
+            return (ExpandTokens(profile, Environment.ExpandEnvironmentVariables(template)) ?? "")
                 .Replace("{root}", root)
                 .Replace("{required_file}", ProfileRequiredFile(profile))
                 .Replace("{executable_dir}", string.IsNullOrWhiteSpace(executable) ? "" : Path.GetDirectoryName(executable));

@@ -319,7 +319,8 @@ namespace CrossCrease
                     if (!typed.TryGetValue(setting.id, out value) && !saved.TryGetValue(setting.id, out value)) value = setting.@default ?? "";
                     var box = new TextBox {
                         Text = value, Location = new Point(Pad, y), Width = Ui.S(320),
-                        BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, BorderStyle = BorderStyle.FixedSingle
+                        BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, BorderStyle = BorderStyle.FixedSingle,
+                        UseSystemPasswordChar = setting.secret
                     };
                     settingBoxes[setting.id] = box;
                     content.Controls.Add(box);
@@ -338,7 +339,7 @@ namespace CrossCrease
                 {
                     TextBox box;
                     if (!settingBoxes.TryGetValue(setting.id, out box)) continue;
-                    string value = box.Text.Trim();
+                    string value = setting.secret ? box.Text : box.Text.Trim();
                     if (!MainForm.SettingValid(setting, value))
                     {
                         settingsMessage = (setting.label ?? setting.id) + " is not valid." + (string.IsNullOrWhiteSpace(setting.description) ? "" : " " + setting.description);

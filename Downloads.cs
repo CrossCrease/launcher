@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
@@ -491,7 +492,16 @@ namespace CrossCrease
                 if (File.Exists(file))
                 {
                     var loaded = serializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(file));
-                    if (loaded != null) return new Dictionary<string, string>(loaded, StringComparer.OrdinalIgnoreCase);
+                    if (loaded != null)
+                    {
+                        var values = new Dictionary<string, string>(loaded, StringComparer.OrdinalIgnoreCase);
+                        foreach (var key in new List<string>(values.Keys))
+                        {
+                            var setting = FindSetting(profile, key);
+                            if (setting != null && setting.secret) values[key] = Unprotect(values[key]);
+                        }
+                        return values;
+                    }
                 }
             }
             catch { }
@@ -502,7 +512,34 @@ namespace CrossCrease
         {
             string file = SettingsFile(profile);
             Directory.CreateDirectory(Path.GetDirectoryName(file));
-            File.WriteAllText(file, serializer.Serialize(values));
+            var stored = new Dictionary<string, string>(values, StringComparer.OrdinalIgnoreCase);
+            foreach (var key in new List<string>(stored.Keys))
+            {
+                var setting = FindSetting(profile, key);
+                if (setting != null && setting.secret && !string.IsNullOrEmpty(stored[key])) stored[key] = Protect(stored[key]);
+            }
+            File.WriteAllText(file, serializer.Serialize(stored));
+        }
+
+        // Secret settings are encrypted for the current Windows user. A value that cannot be
+        // decrypted (another user or PC) reads as empty, so Play asks for it again.
+        const string ProtectedPrefix = "dpapi:";
+
+        static string Protect(string value)
+        {
+            var data = ProtectedData.Protect(System.Text.Encoding.UTF8.GetBytes(value), null, DataProtectionScope.CurrentUser);
+            return ProtectedPrefix + Convert.ToBase64String(data);
+        }
+
+        static string Unprotect(string value)
+        {
+            if (string.IsNullOrEmpty(value) || !value.StartsWith(ProtectedPrefix, StringComparison.Ordinal)) return value;
+            try
+            {
+                var data = Convert.FromBase64String(value.Substring(ProtectedPrefix.Length));
+                return System.Text.Encoding.UTF8.GetString(ProtectedData.Unprotect(data, null, DataProtectionScope.CurrentUser));
+            }
+            catch (Exception) { return ""; }
         }
 
         static ProfileSetting FindSetting(GameProfile profile, string id)
@@ -587,7 +624,8 @@ namespace CrossCrease
                 string value;
                 var box = new TextBox {
                     Text = current.TryGetValue(setting.id, out value) ? value : (setting.@default ?? ""),
-                    Location = new Point(pad, y), Width = width, BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, BorderStyle = BorderStyle.FixedSingle
+                    Location = new Point(pad, y), Width = width, BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, BorderStyle = BorderStyle.FixedSingle,
+                    UseSystemPasswordChar = setting.secret
                 };
                 boxes.Add(box);
                 Controls.Add(box);
@@ -619,7 +657,7 @@ namespace CrossCrease
         {
             for (int i = 0; i < settings.Count; i++)
             {
-                string value = boxes[i].Text.Trim();
+                string value = settings[i].secret ? boxes[i].Text : boxes[i].Text.Trim();
                 bool valid = value.Length > 0 && !value.Contains("\"");
                 if (valid && !string.IsNullOrWhiteSpace(settings[i].pattern))
                     try { valid = Regex.IsMatch(value, settings[i].pattern); } catch { valid = false; }

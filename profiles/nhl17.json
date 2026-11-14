@@ -5,9 +5,9 @@
   "description": "CrossCrease NHL 17. The launcher downloads the CrossCrease runtime, which includes the online connection files; you supply your own copy of the game with update 1.08.",
   "package_feed": "https://github.com/CrossCrease/nhl17/releases/latest/download/crosscrease-nhl17-feed.json",
   "packages": ["runtime"],
-  "minimum_versions": { "runtime": "0.2.0" },
+  "minimum_versions": { "runtime": "0.3.0" },
   "executable": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\"",
+  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\" -Password \"{setting:password}\"",
   "working_directory": "{data}",
   "required_file_relative": "eboot.bin",
   "search_roots": [
@@ -29,6 +29,13 @@
       "pattern": "^[a-zA-Z0-9_-]{3,16}$"
     },
     {
+      "id": "password",
+      "label": "Password",
+      "description": "Protects your online ID on the server: 8 to 64 characters, no \\ \" { or }. The first time you play with a new online ID, this becomes its password.",
+      "pattern": "^[^\"\\\\{}]{8,64}$",
+      "secret": true
+    },
+    {
       "id": "server_address",
       "label": "Server",
       "description": "Type default to use the CrossCrease server, or enter a host name or IP address.",
@@ -36,7 +43,7 @@
       "default": "default"
     }
   ],
-  "play_settings": ["online_id", "server_address"],
+  "play_settings": ["online_id", "password", "server_address"],
   "toggles": [
     {
       "id": "use_update",
