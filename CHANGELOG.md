@@ -2,6 +2,11 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.7.1 — NHL 17 base game online
+
+### Changed
+- NHL 17: the base game (1.00, **Start with the game update** turned off) now plays online instead of offline. Base-game players are matched only with other base-game players. Before starting the base game, CrossCrease keeps a copy of your saves, because the base game cannot load a profile saved with the update. The profile requires NHL 17 runtime 0.4.0, which the launcher installs before the next **Play**.
+
 ## 0.7.0 — Online passwords
 
 ### Added

@@ -115,7 +115,7 @@ Delete the file to go back to the published feeds. For automated tests, the envi
 
 ## Included profiles
 
-- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime 0.2.0 or newer, which includes the online connection files. **Play** connects to the CrossCrease server when the game update is on, and starts offline with the base game.
+- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime 0.4.0 or newer, which includes the online connection files. **Play** connects to the CrossCrease server with the game update (1.08) and with the base game (1.00, **Start with the game update** turned off); players only meet others with the same version.
 - NHL 15, 16, 18–27: planned (`"status": "planned"`), shown as "Coming soon".
 
 ## Cover art
