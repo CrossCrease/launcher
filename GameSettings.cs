@@ -335,6 +335,7 @@ namespace CrossCrease
             {
                 var item = Item;
                 if (item == null) return;
+                var before = owner.LoadSettings(item.Profile);
                 var values = owner.LoadSettings(item.Profile);
                 foreach (var setting in item.Profile.settings)
                 {
@@ -350,12 +351,14 @@ namespace CrossCrease
                     }
                     values[setting.id] = value;
                 }
+                string changeMessage;
+                if (!owner.ConfirmSettingChanges(item, before, values, out changeMessage)) return;
                 try
                 {
                     owner.SaveSettings(item.Profile, values);
                     typed.Clear();
                     foreach (var pair in settingBoxes) typed[pair.Key] = pair.Value.Text.Trim();
-                    settingsMessage = "Saved.";
+                    settingsMessage = changeMessage != null ? changeMessage + " Saved." : "Saved.";
                     settingsMessageIsError = false;
                 }
                 catch (Exception ex) { settingsMessage = ex.Message; settingsMessageIsError = true; }

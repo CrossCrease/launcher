@@ -26,7 +26,16 @@
       "id": "online_id",
       "label": "Online ID",
       "description": "Your name online: 3 to 16 letters, numbers, - or _.",
-      "pattern": "^[a-zA-Z0-9_-]{3,16}$"
+      "pattern": "^[a-zA-Z0-9_-]{3,16}$",
+      "on_change": {
+        "title": "Change your online ID",
+        "action_label": "Rename {previous} to {value}",
+        "action_note": "Recommended. Your account keeps everything: HUT team, stats, friends and password. Online IDs can be changed once a week, and {previous} stays reserved for you for 30 days.",
+        "skip_label": "Just switch to {value}",
+        "skip_note": "Play as a different account: an online ID you already have, or a new one. {previous} keeps its HUT team and stats. Choose this too if the server operator already renamed you.",
+        "executable": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        "arguments_template": "-NoProfile -ExecutionPolicy Bypass -File \"{package:runtime}\\tools\\rename_online_id.ps1\" -OnlineId \"{previous}\" -NewOnlineId \"{value}\" -ServerAddress \"{setting:server_address}\""
+      }
     },
     {
       "id": "password",

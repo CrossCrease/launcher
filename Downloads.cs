@@ -208,7 +208,7 @@ namespace CrossCrease
             }
         }
 
-        string ExpandTokens(GameProfile profile, string value)
+        string ExpandTokens(GameProfile profile, string value, Dictionary<string, string> values = null)
         {
             if (value == null) return null;
             string result = value.Replace("{launcher}", baseDirectory.TrimEnd(Path.DirectorySeparatorChar));
@@ -228,7 +228,7 @@ namespace CrossCrease
                 // SecretEnvironment instead.
                 var setting = FindSetting(profile, match.Groups[1].Value);
                 if (setting != null && setting.secret) return "";
-                return (SettingValue(profile, match.Groups[1].Value) ?? "").Replace("\"", "");
+                return (SettingValue(profile, match.Groups[1].Value, values) ?? "").Replace("\"", "");
             });
             return unresolved ? null : result;
         }
@@ -569,22 +569,23 @@ namespace CrossCrease
         }
 
         // Adds every secret setting that has a valid value to a process's environment.
-        void AddSecretEnvironment(GameProfile profile, ProcessStartInfo startInfo)
+        void AddSecretEnvironment(GameProfile profile, ProcessStartInfo startInfo, Dictionary<string, string> values = null)
         {
             if (profile.settings == null) return;
             foreach (var setting in profile.settings)
             {
                 if (setting == null || !setting.secret || string.IsNullOrWhiteSpace(setting.id)) continue;
-                string value = SettingValue(profile, setting.id);
+                string value = SettingValue(profile, setting.id, values);
                 if (!string.IsNullOrEmpty(value)) startInfo.EnvironmentVariables[SecretVariableName(setting.id)] = value;
             }
         }
 
-        string SettingValue(GameProfile profile, string id)
+        // values: settings about to be saved, used instead of the saved ones.
+        string SettingValue(GameProfile profile, string id, Dictionary<string, string> values = null)
         {
             string value;
             var setting = FindSetting(profile, id);
-            if (LoadSettings(profile).TryGetValue(id, out value) && (setting == null || SettingValid(setting, value))) return value;
+            if ((values ?? LoadSettings(profile)).TryGetValue(id, out value) && (setting == null || SettingValid(setting, value))) return value;
             return setting != null ? setting.@default : null;
         }
 
@@ -602,15 +603,166 @@ namespace CrossCrease
             using (var dialog = new SettingsDialog(profile.name + (purpose != null ? " · " + purpose : " settings"), shown, values, item.Accent))
             {
                 if (dialog.ShowDialog(DialogOwner) != DialogResult.OK) return false;
+                var before = LoadSettings(profile);
                 foreach (var pair in dialog.Values) values[pair.Key] = pair.Value;
+                string changeMessage;
+                if (!ConfirmSettingChanges(item, before, values, out changeMessage)) return false;
                 try { SaveSettings(profile, values); }
                 catch (Exception ex)
                 {
                     MessageBox.Show(DialogOwner, ex.Message, "Could not save settings", MessageBoxButtons.OK, MessageBoxIcon.Error);
                     return false;
                 }
+                if (changeMessage != null)
+                    MessageBox.Show(DialogOwner, changeMessage, profile.name ?? "Settings", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return true;
             }
+        }
+    }
+
+    partial class MainForm
+    {
+        // Before saving: for every changed setting with on_change (and a valid earlier value), asks whether
+        // to run its program or just save. Returns false when the player cancels or the program fails.
+        internal bool ConfirmSettingChanges(LibraryItem item, Dictionary<string, string> before, Dictionary<string, string> after, out string message)
+        {
+            message = null;
+            var profile = item.Profile;
+            if (profile.settings == null) return true;
+            foreach (var setting in profile.settings)
+            {
+                if (setting == null || setting.on_change == null || string.IsNullOrWhiteSpace(setting.id)) continue;
+                string previous, value;
+                if (!before.TryGetValue(setting.id, out previous) || !SettingValid(setting, previous)) continue;
+                if (!after.TryGetValue(setting.id, out value) || value == previous) continue;
+                var change = setting.on_change;
+                Func<string, string> fill = delegate(string text) { return (text ?? "").Replace("{previous}", previous).Replace("{value}", value); };
+                string title = fill(change.title ?? ((setting.label ?? setting.id) + " changed"));
+                bool run;
+                using (var dialog = new SettingChangeDialog(title, fill(change.action_label), fill(change.action_note),
+                    fill(change.skip_label ?? "Just save"), fill(change.skip_note), item.Accent))
+                {
+                    if (dialog.ShowDialog(DialogOwner) != DialogResult.OK) return false;
+                    run = dialog.RunAction;
+                }
+                if (!run) continue;
+                string output;
+                if (!RunSettingChange(item, change, previous, value, after, out output))
+                {
+                    MessageBox.Show(DialogOwner, string.IsNullOrWhiteSpace(output) ? "The change did not work." : output,
+                        title, MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                    return false;
+                }
+                message = output == null ? null : output.EndsWith(".") || output.EndsWith("!") ? output : output + ".";
+            }
+            return true;
+        }
+
+        bool RunSettingChange(LibraryItem item, SettingChange change, string previous, string value, Dictionary<string, string> values, out string output)
+        {
+            output = null;
+            var profile = item.Profile;
+            string executable = ResolvePath(profile, change.executable);
+            string arguments = ExpandTokens(profile, Environment.ExpandEnvironmentVariables(change.arguments_template ?? ""), values);
+            if (!File.Exists(executable) || arguments == null)
+            {
+                output = "This needs the game's runtime download. Install or update it first.";
+                return false;
+            }
+            var startInfo = new ProcessStartInfo(executable)
+            {
+                Arguments = arguments.Replace("{previous}", previous).Replace("{value}", value),
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            AddSecretEnvironment(profile, startInfo, values);
+            var previousCursor = Cursor.Current;
+            Cursor.Current = Cursors.WaitCursor;
+            try
+            {
+                using (var process = Process.Start(startInfo))
+                {
+                    var errors = process.StandardError.ReadToEndAsync();
+                    string text = process.StandardOutput.ReadToEnd();
+                    if (!process.WaitForExit(60000))
+                    {
+                        try { process.Kill(); } catch { }
+                        output = "The change took too long and was stopped.";
+                        return false;
+                    }
+                    output = LastLine(text) ?? LastLine(errors.Result);
+                    return process.ExitCode == 0;
+                }
+            }
+            catch (Exception ex) { output = ex.Message; return false; }
+            finally { Cursor.Current = previousCursor; }
+        }
+
+        static string LastLine(string text)
+        {
+            var lines = (text ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = lines.Length - 1; i >= 0; i--)
+                if (!string.IsNullOrWhiteSpace(lines[i])) return lines[i].Trim();
+            return null;
+        }
+    }
+
+    // Asks what to do with a changed setting: run its program (for example rename on the server) or just save.
+    sealed class SettingChangeDialog : Form
+    {
+        public bool RunAction;
+
+        public SettingChangeDialog(string title, string actionLabel, string actionNote, string skipLabel, string skipNote, Color accent)
+        {
+            Text = title;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = MinimizeBox = false;
+            ShowInTaskbar = false;
+            StartPosition = FormStartPosition.CenterParent;
+            AutoScaleMode = AutoScaleMode.None;
+            BackColor = Color.FromArgb(24, 27, 33);
+            ForeColor = Ui.Text;
+            Font = new Font("Segoe UI", 10f);
+            int pad = Ui.S(24), width = Ui.S(460), y = pad, h = Ui.S(42);
+            Controls.Add(new Label { Text = title, Font = Ui.HeavyFont(14f), AutoSize = true, Location = new Point(pad - Ui.S(2), y) });
+            y += Ui.S(42);
+            if (!string.IsNullOrWhiteSpace(actionLabel))
+            {
+                var action = new FlatButton { Kind = ButtonKind.Primary, Accent = accent, Text = actionLabel };
+                action.SetBounds(pad, y, width, h);
+                action.Click += delegate { RunAction = true; DialogResult = DialogResult.OK; };
+                Controls.Add(action);
+                y += h + Ui.S(6);
+                y = AddNote(pad, y, width, actionNote);
+            }
+            var skip = new FlatButton { Kind = ButtonKind.Secondary, Text = skipLabel };
+            skip.SetBounds(pad, y, width, h);
+            skip.Click += delegate { RunAction = false; DialogResult = DialogResult.OK; };
+            Controls.Add(skip);
+            y += h + Ui.S(6);
+            y = AddNote(pad, y, width, skipNote);
+            var cancel = new FlatButton { Kind = ButtonKind.Ghost, Text = "Cancel" };
+            int cancelWidth = cancel.PreferredWidth();
+            cancel.SetBounds(pad + width - cancelWidth, y, cancelWidth, Ui.S(36));
+            cancel.Click += delegate { DialogResult = DialogResult.Cancel; };
+            Controls.Add(cancel);
+            ClientSize = new Size(width + pad * 2, y + Ui.S(36) + pad);
+        }
+
+        int AddNote(int x, int y, int width, string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return y + Ui.S(14);
+            var note = new Label { Text = text, ForeColor = Ui.Muted, Location = new Point(x, y), MaximumSize = new Size(width, 0), AutoSize = true };
+            Controls.Add(note);
+            return y + note.PreferredHeight + Ui.S(20);
+        }
+
+        protected override bool ProcessDialogKey(Keys keyData)
+        {
+            if (keyData == Keys.Escape) { DialogResult = DialogResult.Cancel; return true; }
+            return base.ProcessDialogKey(keyData);
         }
     }
 

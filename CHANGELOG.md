@@ -7,6 +7,8 @@ All notable changes to the CrossCrease launcher are documented here. The launche
 ### Added
 - NHL 17 asks for a **Password** together with your online ID. The CrossCrease server makes it your online ID's password the first time you sign in with it, so nobody else can play under your name or use your HUT team and stats. **Player settings** changes only what the launcher sends; the server keeps the first password. If you forget it, ask the server operator to reset it.
 - Profile setting field `secret`: masked input, stored encrypted for the Windows user (DPAPI) in the game's `settings.json`, and passed to the game in the environment variable `CROSSCREASE_SETTING_<ID>`, never on its command line. Settings boxes carry their label as accessible name, so accessibility tools no longer read a masked box's contents as its name.
+- Changing your online ID in **Player settings** asks whether to **rename** your account on the server (HUT team, stats, friends and password are kept; once a week) or to **just switch** to another online ID. Needs NHL 17 runtime 0.3.0 and a CrossCrease server with renaming.
+- Profile setting field `on_change`: a program the launcher runs, after asking, when a saved value changes. Its result decides whether the value is saved.
 
 ### Changed
 - NHL 17 needs runtime 0.3.0 or newer, which passes the password to the server.

@@ -89,6 +89,23 @@ namespace CrossCrease
         // A password or other secret: typed into a masked box and stored encrypted for the
         // Windows user (DPAPI) in the game's settings.json.
         public bool secret { get; set; }
+        // Offered when the player changes a saved value (for example renaming an online ID on the server).
+        public SettingChange on_change { get; set; }
+    }
+
+    // A program the launcher can run when a saved setting changes. Labels and notes may use {previous}
+    // and {value}; arguments_template may also use the usual tokens ({package:<id>}, {setting:<id>}, ...),
+    // which see the values being saved. Secret settings reach the program as CROSSCREASE_SETTING_<ID>.
+    // Exit code 0 means success; the program's last line of output is shown to the player.
+    public sealed class SettingChange
+    {
+        public string title { get; set; }
+        public string action_label { get; set; }
+        public string action_note { get; set; }
+        public string skip_label { get; set; }
+        public string skip_note { get; set; }
+        public string executable { get; set; }
+        public string arguments_template { get; set; }
     }
 
     public enum GameState { Ready, Missing, NeedsDownload, Planned }
