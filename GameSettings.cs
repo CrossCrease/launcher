@@ -317,10 +317,11 @@ namespace CrossCrease
                     if (!string.IsNullOrWhiteSpace(setting.description)) Value(setting.description, Ui.Muted);
                     string value;
                     if (!typed.TryGetValue(setting.id, out value) && !saved.TryGetValue(setting.id, out value)) value = setting.@default ?? "";
-                    var box = new TextBox {
+                    var box = new SettingTextBox {
                         Text = value, Location = new Point(Pad, y), Width = Ui.S(320),
                         BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, BorderStyle = BorderStyle.FixedSingle,
-                        UseSystemPasswordChar = setting.secret
+                        Secret = setting.secret,
+                        AccessibleName = setting.label ?? setting.id
                     };
                     settingBoxes[setting.id] = box;
                     content.Controls.Add(box);

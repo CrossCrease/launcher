@@ -224,6 +224,10 @@ namespace CrossCrease
             result = SettingToken.Replace(result, delegate(Match match)
             {
                 // Values are validated against the setting's pattern; quotes are never passed through.
+                // Secret settings never appear on a command line or in a path; they reach the game through
+                // SecretEnvironment instead.
+                var setting = FindSetting(profile, match.Groups[1].Value);
+                if (setting != null && setting.secret) return "";
                 return (SettingValue(profile, match.Groups[1].Value) ?? "").Replace("\"", "");
             });
             return unresolved ? null : result;
@@ -557,6 +561,25 @@ namespace CrossCrease
             try { return Regex.IsMatch(value, setting.pattern); } catch { return false; }
         }
 
+        // Environment variable names for secret settings: CROSSCREASE_SETTING_ plus the id in upper case,
+        // with anything other than letters, digits and _ replaced by _ (password -> CROSSCREASE_SETTING_PASSWORD).
+        internal static string SecretVariableName(string id)
+        {
+            return "CROSSCREASE_SETTING_" + Regex.Replace((id ?? "").ToUpperInvariant(), "[^A-Z0-9_]", "_");
+        }
+
+        // Adds every secret setting that has a valid value to a process's environment.
+        void AddSecretEnvironment(GameProfile profile, ProcessStartInfo startInfo)
+        {
+            if (profile.settings == null) return;
+            foreach (var setting in profile.settings)
+            {
+                if (setting == null || !setting.secret || string.IsNullOrWhiteSpace(setting.id)) continue;
+                string value = SettingValue(profile, setting.id);
+                if (!string.IsNullOrEmpty(value)) startInfo.EnvironmentVariables[SecretVariableName(setting.id)] = value;
+            }
+        }
+
         string SettingValue(GameProfile profile, string id)
         {
             string value;
@@ -622,10 +645,11 @@ namespace CrossCrease
                     y += description.PreferredHeight + Ui.S(6);
                 }
                 string value;
-                var box = new TextBox {
+                var box = new SettingTextBox {
                     Text = current.TryGetValue(setting.id, out value) ? value : (setting.@default ?? ""),
                     Location = new Point(pad, y), Width = width, BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, BorderStyle = BorderStyle.FixedSingle,
-                    UseSystemPasswordChar = setting.secret
+                    Secret = setting.secret,
+                    AccessibleName = setting.label ?? setting.id
                 };
                 boxes.Add(box);
                 Controls.Add(box);

@@ -546,6 +546,32 @@ namespace CrossCrease
 
     public enum ButtonKind { Primary, Secondary, Ghost }
 
+    // A text box for profile settings. For a secret setting the text is masked and other programs
+    // cannot read it: the window text is withheld from requests sent by other threads (other
+    // processes, accessibility tools), as Windows does for its own password boxes.
+    public sealed class SettingTextBox : TextBox
+    {
+        const int WM_GETTEXT = 0x000D, WM_GETTEXTLENGTH = 0x000E, ISMEX_SEND = 0x1;
+        [DllImport("user32.dll")] static extern int InSendMessageEx(IntPtr reserved);
+
+        bool secret;
+        public bool Secret
+        {
+            get { return secret; }
+            set { secret = value; UseSystemPasswordChar = value; }
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            if (secret && (m.Msg == WM_GETTEXT || m.Msg == WM_GETTEXTLENGTH) && (InSendMessageEx(IntPtr.Zero) & ISMEX_SEND) != 0)
+            {
+                m.Result = IntPtr.Zero;
+                return;
+            }
+            base.WndProc(ref m);
+        }
+    }
+
     public sealed class FlatButton : Control
     {
         ButtonKind kind = ButtonKind.Secondary;
@@ -2262,11 +2288,13 @@ namespace CrossCrease
             try
             {
                 if (!string.IsNullOrWhiteSpace(workingDirectory)) Directory.CreateDirectory(workingDirectory);
-                Process.Start(new ProcessStartInfo(executable) {
+                var startInfo = new ProcessStartInfo(executable) {
                     Arguments = ProfileArguments(profile, option != null ? option.arguments_template : null) + ToggleArguments(item, option != null ? option.id : "play"),
                     WorkingDirectory = workingDirectory,
                     UseShellExecute = false
-                });
+                };
+                AddSecretEnvironment(profile, startInfo);
+                Process.Start(startInfo);
                 WindowState = FormWindowState.Minimized;
             }
             catch (Exception ex)

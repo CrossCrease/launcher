@@ -7,7 +7,7 @@
   "packages": ["runtime"],
   "minimum_versions": { "runtime": "0.3.0" },
   "executable": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\" -Password \"{setting:password}\"",
+  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\"",
   "working_directory": "{data}",
   "required_file_relative": "eboot.bin",
   "search_roots": [
