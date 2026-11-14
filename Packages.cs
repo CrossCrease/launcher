@@ -472,7 +472,8 @@ namespace CrossCrease
         {
             if (bytes <= 0) return "";
             if (bytes < 1024 * 1024) return Math.Max(1, bytes / 1024) + " KB";
-            return (bytes / (1024.0 * 1024.0)).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " MB";
+            if (bytes < 1024L * 1024 * 1024) return (bytes / (1024.0 * 1024.0)).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " MB";
+            return (bytes / (1024.0 * 1024.0 * 1024.0)).ToString("0.0", System.Globalization.CultureInfo.InvariantCulture) + " GB";
         }
     }
 }

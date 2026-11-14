@@ -175,11 +175,19 @@ namespace CrossCrease
                 }
                 else
                 {
-                    Value("Not found yet." + (relative != null ? " Select the game's " + Path.GetFileName(relative) + " or the folder that contains it." : ""), Ui.Amber);
+                    Value("Not found yet." + (owner.CanInstallFromPackage(item.Profile) ? " Install it from your .pkg files, or select" : " Select") +
+                        (relative != null ? " the game's " + Path.GetFileName(relative) + " or the folder that contains it." : " the game folder."), Ui.Amber);
                 }
                 var buttons = new List<FlatButton>();
+                if (owner.CanInstallFromPackage(item.Profile))
+                {
+                    var install = Button("Install from .pkg files…", item.GameFound ? ButtonKind.Secondary : ButtonKind.Primary, item.Accent,
+                        delegate { if (owner.InstallFromPackage(Item)) Close(); });
+                    install.Enabled = owner.installing == null;
+                    buttons.Add(install);
+                }
                 if (relative != null)
-                    buttons.Add(Button("Select " + Path.GetFileName(relative) + "…", item.GameFound ? ButtonKind.Secondary : ButtonKind.Primary, item.Accent,
+                    buttons.Add(Button("Select " + Path.GetFileName(relative) + "…", item.GameFound || owner.CanInstallFromPackage(item.Profile) ? ButtonKind.Secondary : ButtonKind.Primary, item.Accent,
                         delegate { owner.ChooseGameFile(Item); }));
                 buttons.Add(Button("Select folder…", ButtonKind.Secondary, item.Accent, delegate { owner.ChooseGameFolder(Item); }));
                 if (owner.HasSavedLocation(item.Profile))
@@ -188,7 +196,8 @@ namespace CrossCrease
                     buttons.Add(Button("Open folder", ButtonKind.Ghost, item.Accent, delegate { owner.OpenGameFolder(Item); }));
                 PlaceButtons(buttons.ToArray(), false);
                 AddToggles(item);
-                Note("The base game is enough to play. An update is optional: put it next to the game in a folder with the same name plus \"-UPDATE\".");
+                Note("The base game is enough to play. An update is optional: put it next to the game in a folder with the same name plus \"-UPDATE\"" +
+                    (owner.CanInstallFromPackage(item.Profile) ? ", or install it from its .pkg file." : "."));
             }
 
             void AddToggles(LibraryItem item)
@@ -243,7 +252,7 @@ namespace CrossCrease
                     }
                     else line = name + ": " + installed + " installed" + (offered != null ? " (latest)" : "");
                     string kept = owner.packages.PreviousVersion(profile.id, id);
-                    if (installed != null && kept != null)
+                    if (installed != null && kept != null && MainForm.MeetsMinimum(profile, id, kept))
                     {
                         line += " · " + kept + " kept for rollback";
                         rollbacks.Add(new KeyValuePair<string, string>(id, name + " " + kept));
@@ -299,7 +308,7 @@ namespace CrossCrease
             void AddPlayerSettings(LibraryItem item)
             {
                 var profile = item.Profile;
-                Heading("Player settings", "Used by options such as Play online.");
+                Heading("Player settings", "Used when you play, for example to connect online.");
                 var saved = owner.LoadSettings(profile);
                 foreach (var setting in profile.settings)
                 {

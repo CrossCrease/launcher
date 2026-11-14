@@ -10,8 +10,12 @@ Download `crosscrease-launcher-<version>-windows-x64.zip` from the [latest relea
 
 Supported games that are not ready yet show **Set up** on their cover. Select the cover; the bar above the library shows the two steps and the button for the next one.
 
-1. **Your game files** come first. **Set up NHL 17** asks for the game's `eboot.bin`. This step is skipped when CrossCrease already found the game.
-2. **The CrossCrease runtime** downloads right after that (for NHL 17: the adjusted shadPS4 build, its default configuration and launch scripts). If your game was already found, the button reads **Download runtime (29.8 MB)**. Files are checked against a SHA-256 checksum before they are installed.
+1. **Your game files** come first. **Set up NHL 17** asks how you have the game:
+   - **Install from .pkg files**: choose the game's `.pkg` file, and the update's `.pkg` as well if you have it (hold Ctrl to select both). CrossCrease checks them, shows how much space they need, and unpacks them into `Documents\CrossCrease\NHL 17\` or a folder you choose. The bar shows the progress and a **Cancel** button. Your `.pkg` files are not changed, and you can delete them afterwards.
+   - **Select eboot.bin…**: the game is already unpacked into a folder.
+
+   This step is skipped when CrossCrease already found the game.
+2. **The CrossCrease runtime** downloads right after that (for NHL 17: the adjusted shadPS4 build, its default configuration, launch scripts and the online connection files). If your game was already found, the button reads **Download runtime (29.8 MB)**. Files are checked against a SHA-256 checksum before they are installed.
 3. Then the game is **Ready to play**.
 
 The base game is all you need. An update (for example NHL 17 1.08) is optional and used when it is present. **Start with the game update** in **Game settings**, or in the cover's right-click menu, switches between the update and the base game for **Play**.
@@ -24,8 +28,8 @@ You can also choose your game files at any time in **Game settings**:
 
    Updates must sit next to the base game in a folder with the same name plus `-UPDATE` (or `-patch`), for example `CUSA04326` and `CUSA04326-UPDATE`. shadPS4 applies them from there. If you pick the update folder's `eboot.bin`, CrossCrease uses the base game next to it. The selection bar shows the detected title ID and version, for example "CUSA04326 · version 01.08 (update installed)".
 
-   Installing from `.pkg` files is not supported yet. Unpack them with your own tools first.
-4. **Play** starts the game. Extra ways to start a game, such as **Play online**, appear next to Play. If they need more files, the launcher offers to download them first, and it asks once for any details they need (such as your online ID).
+   **Install from .pkg files…** is also in **Game settings** and in the cover's right-click menu (under **Game files**), for example to add an update later. It works with PS4 packages made for PC or homebrew use ("fake PKG" or fPKG). Packages bought from the PlayStation Store are encrypted for one console and can't be unpacked on a PC; CrossCrease says so instead of installing them. Add-on content (DLC) and partial (delta) updates are not supported.
+4. **Play** starts the game. The first time, it asks once for any details the game needs (for NHL 17: your online ID and the server, which can stay `default`). Change them later under **Player settings** in **Game settings**.
 
 CrossCrease never downloads or distributes game files, firmware, keys or saves. You need your own copy of each game.
 
@@ -45,7 +49,7 @@ Cover states:
 | State | Look | Meaning |
 | --- | --- | --- |
 | Ready to play | Colour, green dot | The game, its required files and its downloads are present. |
-| Update available | Colour, blue dot | A newer runtime or online package is available. Select the game and choose **Update**. |
+| Update available | Colour, blue dot | A newer runtime is available. Select the game and choose **Update**. |
 | Set up | Greyscale, blue dot | A supported game that still needs your game files and/or the CrossCrease runtime. |
 | Coming soon | Greyscale | The title is on the CrossCrease roadmap but not supported yet. |
 
@@ -111,7 +115,7 @@ Delete the file to go back to the published feeds. For automated tests, the envi
 
 ## Included profiles
 
-- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime; **Play online** adds the online connection files.
+- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime 0.2.0 or newer, which includes the online connection files. **Play** connects to the CrossCrease server when the game update is on, and starts offline with the base game.
 - NHL 15, 16, 18–27: planned (`"status": "planned"`), shown as "Coming soon".
 
 ## Cover art
@@ -159,14 +163,15 @@ Both use the .NET Framework 4 `csc.exe` that ships with Windows; nothing else ne
   "working_directory": "{data}",
   "required_file_relative": "eboot.bin",
   "search_roots": ["%USERPROFILE%\\Documents\\CrossCrease\\Example", "{launcher}\\games\\example"],
+  "minimum_versions": { "runtime": "1.0.0" },
   "settings": [
     { "id": "online_id", "label": "Online ID", "description": "3 to 16 characters.", "pattern": "^[a-zA-Z0-9_-]{3,16}$" }
   ],
+  "play_settings": ["online_id"],
   "launch_options": [
     {
-      "id": "online", "label": "Play online",
-      "packages": ["runtime", "online"], "settings": ["online_id"],
-      "arguments_template": "--game \"{required_file}\" --online \"{package:online}\" --id \"{setting:online_id}\""
+      "id": "safe", "label": "Safe mode",
+      "arguments_template": "--game \"{required_file}\" --safe"
     }
   ],
   "cover": "covers\\example.png",
@@ -180,8 +185,10 @@ Both use the .NET Framework 4 `csc.exe` that ships with Windows; nothing else ne
 - `executable` / `executable_relative`, `required_file` / `required_file_relative` and `working_directory` / `working_directory_relative` describe how to validate and start the game. The `_relative` forms are relative to the game folder (the found or located root).
 - `search_roots` are tried automatically, then the user's saved **Locate game** choice. A saved choice that no longer matches the profile is ignored, so changing a profile's layout falls back to discovery.
 - `package_feed` (optional) is the feed URL. `packages` lists the package ids that must be installed before **Play** is offered.
+- `package_install` (optional) lets players install the game from their own package files: `{ "format": "ps4_pkg", "title_ids": ["CUSA04326"], "folder": "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17" }`. `title_ids` limits which games are accepted (empty accepts any), and `folder` is the suggested install location (`{launcher}` and environment variables work). The game is unpacked into `<folder>\<title id>` and its update into `<folder>\<title id>-UPDATE`, and the game's location is saved for the profile.
+- `minimum_versions` (optional) maps a package id to the oldest installed version the profile can start with. An older installed version counts as not installed, so the game shows **Set up** and offers the current download (saves and settings are kept). Use it when a profile starts relying on files that only newer packages contain.
 - `launch_options` (optional) add buttons next to Play. Each may list its own `packages` and `settings`, and may override `executable`, `arguments_template` and `working_directory`.
-- `settings` (optional) are values asked for once in a small dialog and saved per user. `pattern` is a regular expression the value must match; values can never contain quotes. `default` pre-fills the field.
+- `settings` (optional) are values asked for once in a small dialog and saved per user. `play_settings` lists the ones **Play** asks for before the first launch; a launch option asks for its own `settings`. `pattern` is a regular expression the value must match; values can never contain quotes. `default` pre-fills the field.
 - `toggles` (optional) are per-game on/off choices, shown in **Game settings** and the right-click menu. Each has an `id`, `label`, `description` and `default`. `arguments_on` / `arguments_off` are appended to the launch command. `launches` lists the launches it applies to (`"play"` is the main Play button; other values are `launch_options` ids). `"requires": "game_update"` only offers the toggle when an update folder (`<game folder>-UPDATE` or `-patch`) exists. NHL 17 uses this for **Start with the game update** (off adds `-BaseOnly`).
 - Paths and argument templates support Windows environment variables and these tokens:
   - `{launcher}`: the launcher folder.
@@ -201,6 +208,8 @@ Use **Import profile** to copy another JSON profile into the launcher, or place 
 
 ## Troubleshooting
 
+- **"This package is encrypted for a PlayStation 4 console":** the `.pkg` comes from the PlayStation Store and only works on the console it was bought for. Use a package made from your own game for PC or homebrew use.
+- **"Not enough space" when installing from .pkg:** the unpacked game needs about as much space as the `.pkg` files. Choose a folder on another drive, or free up space.
 - **"No download has been published for this game yet":** the game project has no release with a feed yet. Developers can test with a local feed (see above).
 - **"Could not reach the download server":** check your internet connection, then press **Refresh**. Already-installed games still start.
 - **"Failed its integrity check":** the download was damaged or changed. Nothing was installed; try again.
@@ -208,3 +217,7 @@ Use **Import profile** to copy another JSON profile into the launcher, or place 
 - **The game starts without its update:** the update must sit next to the base game folder, with the same name plus `-UPDATE`, and **Start with the game update** must be on in **Game settings**.
 - **A custom cover does not appear:** make sure it is a PNG, JPG, or BMP file, then use **Refresh**.
 - **No covers appear:** check that `profiles\*.json` sits next to `CrossCrease.exe` and contains valid JSON.
+
+## Attribution
+
+Installing from `.pkg` files uses CrossCrease's own C# reader for the PS4 package (PKG) and PlayStation file system (PFS/PFSC) formats. It follows the publicly documented formats and the behaviour of earlier shadPS4 releases (GPL-2.0-or-later). The two RSA keysets in `Ps4Package.cs` are the publicly known "fake PKG" keysets that open-source PS4 tools such as LibOrbisPkg and shadPS4 (up to 0.6.0) also publish. They only open packages built with them. CrossCrease contains no console keys or game keys.

@@ -45,10 +45,11 @@ namespace CrossCrease
                     else downloadProblem = feedErrors.TryGetValue(item.Profile.id, out error) ? error : "the download list is not available";
                 }
                 else if (LauncherTooOld(feed)) { launcherTooOld = true; downloadProblem = "needs CrossCrease launcher " + feed.minimum_launcher + " or newer"; }
+                else if (!FeedMeetsMinimums(item.Profile, feed, item.MissingPackages)) downloadProblem = "the published release is older than this launcher needs; check again later";
             }
             long size = feed != null ? DownloadSize(feed, item.MissingPackages) : 0;
 
-            string filesStep = item.GameFound ? "Game files found" : "Select your game files";
+            string filesStep = item.GameFound ? "Game files found" : CanInstallFromPackage(item.Profile) ? "Install or select your game" : "Select your game files";
             string runtimeStep = !needDownload ? "CrossCrease runtime installed"
                 : checking ? "CrossCrease runtime: checking for the download…"
                 : downloadProblem != null ? "CrossCrease runtime: " + downloadProblem
@@ -70,6 +71,7 @@ namespace CrossCrease
             string id = item.Profile.id;
             if (!item.GameFound)
             {
+                if (CanInstallFromPackage(item.Profile)) { ChooseGameSource(item); return; }
                 if (!ChooseGameFile(item)) return;
                 item = ItemById(id);
                 if (item == null) return;

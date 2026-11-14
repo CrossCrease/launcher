@@ -44,6 +44,12 @@ namespace CrossCrease
             if (relative != null)
                 entries.Add(MenuEntry("Select " + Path.GetFileName(relative) + "…", delegate { ChooseGameFile(item); }));
             entries.Add(MenuEntry("Select game folder…", delegate { ChooseGameFolder(item); }));
+            if (CanInstallFromPackage(item.Profile))
+            {
+                var install = MenuEntry("Install from .pkg files…", delegate { InstallFromPackage(item); });
+                install.Enabled = installing == null;
+                entries.Add(install);
+            }
             var reset = MenuEntry("Use automatic detection", delegate { ResetGameLocation(item); });
             reset.Enabled = HasSavedLocation(item.Profile);
             entries.Add(reset);
@@ -196,8 +202,16 @@ namespace CrossCrease
             try
             {
                 if (!File.Exists(path) || new FileInfo(path).Length > 1024 * 1024) return null;
-                byte[] data = File.ReadAllBytes(path);
-                if (data.Length < 20 || data[0] != 0 || data[1] != (byte)'P' || data[2] != (byte)'S' || data[3] != (byte)'F') return null;
+                return ParseParamSfo(File.ReadAllBytes(path));
+            }
+            catch { return null; }
+        }
+
+        internal static Dictionary<string, string> ParseParamSfo(byte[] data)
+        {
+            try
+            {
+                if (data == null || data.Length < 20 || data[0] != 0 || data[1] != (byte)'P' || data[2] != (byte)'S' || data[3] != (byte)'F') return null;
                 int keyTable = BitConverter.ToInt32(data, 8), dataTable = BitConverter.ToInt32(data, 12), count = BitConverter.ToInt32(data, 16);
                 var values = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
                 for (int i = 0; i < count && 20 + i * 16 + 16 <= data.Length; i++)

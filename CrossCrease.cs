@@ -24,7 +24,7 @@ namespace CrossCrease
     public static class BuildInfo
     {
         // Version source of truth for the launcher. Keep CHANGELOG.md in sync.
-        public const string Version = "0.5.1";
+        public const string Version = "0.6.0";
         // Launcher release feed (same format as game package feeds) checked at startup.
         public const string UpdateFeed = "https://github.com/CrossCrease/launcher/releases/latest/download/crosscrease-launcher-feed.json";
         public const string ReleasesPage = "https://github.com/CrossCrease/launcher/releases/latest";
@@ -53,13 +53,20 @@ namespace CrossCrease
         // Downloadable packages (runtime, online files, ...) published by the game project.
         public string package_feed { get; set; }
         public string[] packages { get; set; }
+        // Oldest installed version of a package this profile can launch with ({ "runtime": "0.2.0" }).
+        // An older installed version counts as missing, so the player is asked to download the current one.
+        public Dictionary<string, string> minimum_versions { get; set; }
         public LaunchOption[] launch_options { get; set; }
         public LaunchToggle[] toggles { get; set; }
         public ProfileSetting[] settings { get; set; }
+        // Settings the main Play button asks for once before the first launch (for example an online ID).
+        public string[] play_settings { get; set; }
+        // Lets players install the game from their own package files (for example PS4 .pkg).
+        public PackageInstallOptions package_install { get; set; }
         public string SourceFile { get; set; }
     }
 
-    // An additional way to start the game, such as "Play online", shown next to Play.
+    // An additional way to start the game, shown as a button next to Play.
     public sealed class LaunchOption
     {
         public string id { get; set; }
@@ -540,7 +547,7 @@ namespace CrossCrease
     {
         ButtonKind kind = ButtonKind.Secondary;
         Color accent = Ui.Brand;
-        bool playIcon, hover, pressed;
+        bool playIcon, hover, pressed, keyPressed;
 
         public ButtonKind Kind { get { return kind; } set { kind = value; Invalidate(); } }
         public Color Accent { get { return accent; } set { accent = value; Invalidate(); } }
@@ -585,11 +592,23 @@ namespace CrossCrease
             return (keyData & Keys.KeyCode) == Keys.Enter || base.IsInputKey(keyData);
         }
 
+        // A key released here only counts when it was also pressed here, so the Enter that closed another
+        // dialog does not click the button that has focus in the next one.
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter) keyPressed = true;
+            base.OnKeyDown(e);
+        }
+
         protected override void OnKeyUp(KeyEventArgs e)
         {
-            if (Enabled && (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)) { e.Handled = true; OnClick(EventArgs.Empty); }
+            bool mine = keyPressed;
+            keyPressed = false;
+            if (mine && Enabled && (e.KeyCode == Keys.Space || e.KeyCode == Keys.Enter)) { e.Handled = true; OnClick(EventArgs.Empty); }
             base.OnKeyUp(e);
         }
+
+        protected override void OnLeave(EventArgs e) { keyPressed = false; base.OnLeave(e); }
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -1868,7 +1887,8 @@ namespace CrossCrease
                 primary.Text = installing.Phase;
                 primary.Enabled = false;
                 hero.Detail = installing.Detail;
-                hero.SetButtons(primary);
+                if (installing.CanCancel) hero.SetButtons(primary, CancelInstallButton());
+                else hero.SetButtons(primary);
                 hero.SetContent();
                 return;
             }
@@ -2226,7 +2246,7 @@ namespace CrossCrease
         {
             if (item == null || item.State != GameState.Ready || installing != null) return;
             var profile = item.Profile;
-            if (option != null && !PrepareLaunchOption(item, option)) return;
+            if (option != null ? !PrepareLaunchOption(item, option) : !EnsureSettings(item, profile.play_settings, null)) return;
             string executable = option != null && !string.IsNullOrWhiteSpace(option.executable)
                 ? ResolvePath(profile, option.executable) : ProfileExecutable(profile);
             if (!File.Exists(executable))

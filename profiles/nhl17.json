@@ -2,17 +2,25 @@
   "id": "nhl17",
   "name": "NHL 17",
   "system": "PlayStation 4",
-  "description": "CrossCrease NHL 17. The launcher downloads the CrossCrease runtime; you supply your own copy of the game with update 1.08.",
+  "description": "CrossCrease NHL 17. The launcher downloads the CrossCrease runtime, which includes the online connection files; you supply your own copy of the game with update 1.08.",
   "package_feed": "https://github.com/CrossCrease/nhl17/releases/latest/download/crosscrease-nhl17-feed.json",
   "packages": ["runtime"],
+  "minimum_versions": { "runtime": "0.2.0" },
   "executable": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\"",
+  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\"",
   "working_directory": "{data}",
   "required_file_relative": "eboot.bin",
   "search_roots": [
     "{launcher}\\..\\..\\nhl17\\game",
-    "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17"
+    "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17",
+    "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17\\CUSA04326",
+    "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17\\CUSA04330"
   ],
+  "package_install": {
+    "format": "ps4_pkg",
+    "title_ids": ["CUSA04326", "CUSA04330"],
+    "folder": "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17"
+  },
   "settings": [
     {
       "id": "online_id",
@@ -23,25 +31,17 @@
     {
       "id": "server_address",
       "label": "Server",
-      "description": "Type default to use the server from the online files, or enter a host name or IP address.",
+      "description": "Type default to use the CrossCrease server, or enter a host name or IP address.",
       "pattern": "^[a-zA-Z0-9.:-]{1,253}$",
       "default": "default"
     }
   ],
-  "launch_options": [
-    {
-      "id": "online",
-      "label": "Play online",
-      "packages": ["runtime", "online"],
-      "settings": ["online_id", "server_address"],
-      "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -ConnectionDirectory \"{package:online}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\""
-    }
-  ],
+  "play_settings": ["online_id", "server_address"],
   "toggles": [
     {
       "id": "use_update",
       "label": "Start with the game update",
-      "description": "Uses the update next to the game (for example 1.08). Turn it off to play the base game. Play online always uses the update.",
+      "description": "Uses the update next to the game (for example 1.08). Turn it off to play the base game offline; online play needs the update.",
       "default": true,
       "requires": "game_update",
       "arguments_off": "-BaseOnly",

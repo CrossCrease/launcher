@@ -2,6 +2,18 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.6.0 — One Play button, install from .pkg
+
+### Changed
+- NHL 17 has a single **Play** button. It connects to the CrossCrease server and asks once for your online ID (and server, which can stay `default`). **Play online** is gone. With **Start with the game update** turned off, the base game starts offline.
+- NHL 17 needs runtime 0.2.0 or newer, which includes the online connection files. Older runtimes show **Set up** with a runtime download; saves and settings are kept. A previously downloaded separate online package is no longer used and is removed with **Remove downloaded files…**.
+
+### Added
+- **Install from .pkg files**: Set up asks how you have the game. Choose the game's PS4 `.pkg` (and the update's, if you have it), and CrossCrease checks it, shows the space needed and free, and unpacks it into `Documents\CrossCrease\<game>\` or a folder you choose, with progress and **Cancel**. Also in Game settings and the right-click menu, for example to add an update later. Works with PC/homebrew ("fake") packages; Store packages, add-ons and delta updates are explained and refused. The `.pkg` files are never changed.
+- Profile field `package_install` (`format`, `title_ids`, `folder`). NHL 17 accepts CUSA04326 and CUSA04330.
+- Profile field `play_settings`: settings **Play** asks for once before the first launch.
+- Profile field `minimum_versions`: the oldest installed package version a profile can start with. Older versions count as not installed, and rollback is not offered to them.
+
 ## 0.5.1
 
 ### Added

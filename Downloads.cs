@@ -19,6 +19,9 @@ namespace CrossCrease
             public string Phase = "Preparing…";
             public string Detail = "";
             public float Fraction;
+            // Package installs can be stopped; downloads finish on their own.
+            public bool CanCancel;
+            public volatile bool CancelRequested;
         }
 
         readonly PackageStore packages;
@@ -162,8 +165,31 @@ namespace CrossCrease
             var missing = new List<string>();
             if (ids != null)
                 foreach (var id in ids)
-                    if (packages.InstalledPath(profile.id, id) == null) missing.Add(id);
+                    if (packages.InstalledPath(profile.id, id) == null || !MeetsMinimum(profile, id, packages.InstalledVersion(profile.id, id))) missing.Add(id);
             return missing;
+        }
+
+        static bool FeedMeetsMinimums(GameProfile profile, PackageFeed feed, IEnumerable<string> ids)
+        {
+            foreach (var id in ids)
+            {
+                var offered = feed.Find(id);
+                if (offered != null && !MeetsMinimum(profile, id, offered.version)) return false;
+            }
+            return true;
+        }
+
+        internal static bool MeetsMinimum(GameProfile profile, string packageId, string version)
+        {
+            string minimum;
+            if (profile.minimum_versions == null || version == null) return true;
+            foreach (var pair in profile.minimum_versions)
+                if (string.Equals(pair.Key, packageId, StringComparison.OrdinalIgnoreCase))
+                {
+                    minimum = pair.Value;
+                    return string.IsNullOrWhiteSpace(minimum) || PackageStore.CompareVersions(version, minimum) >= 0;
+                }
+            return true;
         }
 
         void ApplyPackageState(LibraryItem item)
@@ -291,17 +317,23 @@ namespace CrossCrease
         bool PrepareLaunchOption(LibraryItem item, LaunchOption option)
         {
             if (MissingPackages(item.Profile, option.packages).Count > 0) { RunLaunchOption(item, option); return false; }
-            if (option.settings == null || option.settings.Length == 0) return true;
+            return EnsureSettings(item, option.settings, option.label);
+        }
+
+        // Asks once for any of the listed settings that are not saved yet. Returns false on cancel.
+        bool EnsureSettings(LibraryItem item, string[] ids, string purpose)
+        {
+            if (ids == null || ids.Length == 0) return true;
             var saved = LoadSettings(item.Profile);
             bool complete = true;
-            foreach (var id in option.settings)
+            foreach (var id in ids)
             {
                 var setting = FindSetting(item.Profile, id);
                 string value;
                 if (setting == null) continue;
                 if (!saved.TryGetValue(id, out value) || !SettingValid(setting, value)) complete = false;
             }
-            return complete || ShowSettingsDialog(item, option.settings, option.label);
+            return complete || ShowSettingsDialog(item, ids, purpose);
         }
 
         // ----- Installing ----------------------------------------------------------------------
