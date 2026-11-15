@@ -2,6 +2,15 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.8.0 — NHL 17 starts the base game
+
+### Changed
+- NHL 17: **Play** starts the base game (1.00) by default, even when an update is installed, so players meet each other online regardless of whether they have update 1.08. Everyone is switched once, including players who chose the update before; turn **Start with the game update** back on in **Game settings** to keep playing 1.08 (update players only meet other update players). CrossCrease keeps a copy of your saves before it starts the base game.
+
+### Added
+- Game shortcuts with the game's cover as their icon, on the desktop and/or in the Start menu (`Start Menu\Programs\CrossCrease`). CrossCrease offers one when a game becomes ready to play: after installing it from .pkg files, after selecting its `eboot.bin` or folder, or when setup finishes downloading. **Create shortcut…** in the cover's right-click menu and in **Game settings** makes or updates one at any time. A shortcut runs `CrossCrease.exe --play <game id>`, which starts the game like **Play** and closes CrossCrease again; if the game cannot start yet, CrossCrease opens with that game selected. When the cover changes, the shortcuts CrossCrease made get the new icon.
+- Profile toggle field `revision`: raising it resets every player's saved choice for that toggle to its `default` once.
+
 ## 0.7.2 — CrossCrease logo
 
 ### Changed

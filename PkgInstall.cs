@@ -225,6 +225,7 @@ namespace CrossCrease
                         PackageStore.FormatSize(pkgBytes) + "." + (needsRuntime ? "\n\nNext, CrossCrease downloads the files it needs to run the game." : ""),
                         gameName + " installed", MessageBoxButtons.OK, MessageBoxIcon.Information);
                     if (needsRuntime) DownloadButtonClicked(done);
+                    else OfferShortcut(profileId);
                 });
             });
         }

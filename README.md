@@ -18,7 +18,7 @@ Supported games that are not ready yet show **Set up** on their cover. Select th
 2. **The CrossCrease runtime** downloads right after that (for NHL 17: the adjusted shadPS4 build, its default configuration, launch scripts and the online connection files). If your game was already found, the button reads **Download runtime (29.8 MB)**. Files are checked against a SHA-256 checksum before they are installed.
 3. Then the game is **Ready to play**.
 
-The base game is all you need. An update (for example NHL 17 1.08) is optional and used when it is present. **Start with the game update** in **Game settings**, or in the cover's right-click menu, switches between the update and the base game for **Play**.
+The base game is all you need, and it is what **Play** starts for NHL 17, even when an update (for example 1.08) is installed: most players have only the base game, and online you only meet players on the same version. To play with the update, turn on **Start with the game update** in **Game settings** or in the cover's right-click menu.
 
 You can also choose your game files at any time in **Game settings**:
    - **Select eboot.bin…**: point directly at the game's `eboot.bin`. The folder that contains it becomes the game folder.
@@ -41,8 +41,19 @@ CrossCrease never downloads or distributes game files, firmware, keys or saves. 
   - **CrossCrease downloads**: installed and available versions, **Download** / **Update**, **Check for updates**, **Remove downloads…**, **Open saves & data folder**.
   - **Player settings**: values such as your online ID, password and server, with **Save player settings**. Passwords are shown as dots.
   - **Cover**: **Choose image…** and **Reset cover**.
-- **Right-click** a cover for quick actions: game settings, play, game files, start with the game update, open the game folder, check for updates, remove downloads, and the cover image.
+  - **Shortcut**: **Create shortcut…** (or **Update shortcut…**), see below.
+- **Right-click** a cover for quick actions: game settings, play, game files, start with the game update, open the game folder, check for updates, remove downloads, create a shortcut, and the cover image.
 - Arrow keys move through the library. **F5** or **Refresh** rescans the profiles folder and checks for updates.
+
+### Game shortcuts
+
+A shortcut starts a game with one click, from the desktop or the Start menu (in a **CrossCrease** folder there, so Windows search finds it too). Its icon is the game's cover.
+
+- When a game becomes ready to play (after **Install from .pkg files**, after you select its `eboot.bin` or folder, or when setup finishes downloading), CrossCrease asks whether to create one. Choose **On the desktop** and/or **In the Start menu**, then **Create shortcut**, or **Not now**.
+- Any time later: right-click the cover and choose **Create shortcut…**, or use **Shortcut** in **Game settings**.
+- The shortcut runs `CrossCrease.exe --play <game id>`. It starts the game exactly like **Play** (same settings and toggles) and CrossCrease closes again right away. If the game cannot start yet (for example, the runtime is missing), CrossCrease opens with that game selected instead.
+- When the cover changes (your own image, a downloaded cover, or **Reset cover**), the shortcuts CrossCrease made get the new icon. The icons are kept in `%LOCALAPPDATA%\CrossCrease\shortcuts`, together with `shortcuts.json`, the list of shortcuts CrossCrease made.
+- Shortcuts point at `CrossCrease.exe` where it is now. Launcher updates keep that path. If you move the launcher folder, create the shortcuts again.
 
 Cover states:
 
@@ -111,11 +122,11 @@ Until a release is published, or to test a new build, point a game (or `"launche
 { "nhl17": "file:///C:/path/to/nhl17/artifacts/release/0.1.0/crosscrease-nhl17-feed.json" }
 ```
 
-Delete the file to go back to the published feeds. For automated tests, the environment variable `CROSSCREASE_DATA_DIRECTORY` moves all launcher data to another folder. Normal users never need either.
+Delete the file to go back to the published feeds. For automated tests, the environment variable `CROSSCREASE_DATA_DIRECTORY` moves all launcher data to another folder, and `CROSSCREASE_SHORTCUT_DIRECTORY` puts game shortcuts in its `Desktop` and `Start Menu\CrossCrease` subfolders instead of the real ones. Normal users never need any of these.
 
 ## Included profiles
 
-- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime 0.4.0 or newer, which includes the online connection files. **Play** connects to the CrossCrease server with the game update (1.08) and with the base game (1.00, **Start with the game update** turned off); players only meet others with the same version.
+- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime 0.4.0 or newer, which includes the online connection files. **Play** connects to the CrossCrease server with the base game (1.00) by default, and with the game update (1.08) when **Start with the game update** is turned on; players only meet others with the same version.
 - NHL 15, 16, 18–27: planned (`"status": "planned"`), shown as "Coming soon".
 
 ## Cover art
@@ -190,7 +201,7 @@ Both use the .NET Framework 4 `csc.exe` that ships with Windows; nothing else ne
 - `launch_options` (optional) add buttons next to Play. Each may list its own `packages` and `settings`, and may override `executable`, `arguments_template` and `working_directory`.
 - `settings` (optional) are values asked for once in a small dialog and saved per user. `play_settings` lists the ones **Play** asks for before the first launch; a launch option asks for its own `settings`. `pattern` is a regular expression the value must match; values can never contain quotes. `default` pre-fills the field. `"secret": true` masks the field and stores the value encrypted for the Windows user (DPAPI, `dpapi:` prefix in `settings.json`); a value that cannot be decrypted, for example after copying the file to another PC, counts as missing and is asked for again. A secret value is never put on a command line: `{setting:<id>}` expands to nothing for it, and the launched program receives it in the environment variable `CROSSCREASE_SETTING_<ID>` (the id in upper case, other characters than letters, digits and `_` replaced by `_`; `password` becomes `CROSSCREASE_SETTING_PASSWORD`). Environment variables in a template are expanded before setting values are inserted, so a value containing `%` is passed unchanged.
 - `on_change` (optional, on a setting) runs a program when the player changes a saved value, for example to rename an online ID on the server. Saving then shows a dialog with `title`, a primary button `action_label` (with `action_note`) that runs the program, a button `skip_label` (with `skip_note`, default **Just save**) that only saves, and Cancel. Labels and notes may use `{previous}` and `{value}`. `executable` and `arguments_template` work like a launch's, also with `{previous}` and `{value}`; `{setting:<id>}` and secret environment variables see the values being saved. The program runs hidden for at most 60 seconds. Exit code 0 means success and saves; otherwise nothing is saved. Its last line of output is shown to the player either way. It is only offered when the earlier value was valid.
-- `toggles` (optional) are per-game on/off choices, shown in **Game settings** and the right-click menu. Each has an `id`, `label`, `description` and `default`. `arguments_on` / `arguments_off` are appended to the launch command. `launches` lists the launches it applies to (`"play"` is the main Play button; other values are `launch_options` ids). `"requires": "game_update"` only offers the toggle when an update folder (`<game folder>-UPDATE` or `-patch`) exists. NHL 17 uses this for **Start with the game update** (off adds `-BaseOnly`).
+- `toggles` (optional) are per-game on/off choices, shown in **Game settings** and the right-click menu. Each has an `id`, `label`, `description` and `default`. `revision` (optional, default 0) resets everyone's saved choice to `default` once: a saved value only counts if it was saved under the same revision, so raise it when changing a toggle's default for existing players. `arguments_on` / `arguments_off` are appended to the launch command. `launches` lists the launches it applies to (`"play"` is the main Play button; other values are `launch_options` ids). `"requires": "game_update"` only offers the toggle when an update folder (`<game folder>-UPDATE` or `-patch`) exists. NHL 17 uses this for **Start with the game update** (off adds `-BaseOnly`).
 - Paths and argument templates support Windows environment variables and these tokens:
   - `{launcher}`: the launcher folder.
   - `{data}`: the game's per-user data folder.
@@ -215,7 +226,7 @@ Use **Import profile** to copy another JSON profile into the launcher, or place 
 - **"Could not reach the download server":** check your internet connection, then press **Refresh**. Already-installed games still start.
 - **"Failed its integrity check":** the download was damaged or changed. Nothing was installed; try again.
 - **A game still says Set up:** select it and press the button in the bar. It names the step that is missing (your game files or the runtime download).
-- **The game starts without its update:** the update must sit next to the base game folder, with the same name plus `-UPDATE`, and **Start with the game update** must be on in **Game settings**.
+- **The game starts without its update:** the update must sit next to the base game folder, with the same name plus `-UPDATE`, and **Start with the game update** must be on in **Game settings** (NHL 17 starts the base game by default).
 - **A custom cover does not appear:** make sure it is a PNG, JPG, or BMP file, then use **Refresh**.
 - **No covers appear:** check that `profiles\*.json` sits next to `CrossCrease.exe` and contains valid JSON.
 

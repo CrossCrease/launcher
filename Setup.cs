@@ -12,6 +12,9 @@ namespace CrossCrease
         public string label { get; set; }
         public string description { get; set; }
         public bool @default { get; set; }
+        // Raise it to reset everyone's saved choice to the default once (for example when the default changes).
+        // A saved value counts only if it was saved under the same revision.
+        public int revision { get; set; }
         // "game_update": only offered when an update ("<game folder>-UPDATE" / "-patch") is next to the game.
         public string requires { get; set; }
         public string arguments_on { get; set; }
@@ -90,8 +93,11 @@ namespace CrossCrease
 
         bool ToggleValue(GameProfile profile, LaunchToggle toggle)
         {
-            string value;
-            if (LoadSettings(profile).TryGetValue("toggle:" + toggle.id, out value))
+            var values = LoadSettings(profile);
+            string value, savedRevision;
+            int revision = 0;
+            if (values.TryGetValue("toggle:" + toggle.id + ":revision", out savedRevision)) int.TryParse(savedRevision, out revision);
+            if (revision == toggle.revision && values.TryGetValue("toggle:" + toggle.id, out value))
             {
                 bool parsed;
                 if (bool.TryParse(value, out parsed)) return parsed;
@@ -103,6 +109,8 @@ namespace CrossCrease
         {
             var values = LoadSettings(item.Profile);
             values["toggle:" + toggle.id] = value ? "true" : "false";
+            if (toggle.revision != 0) values["toggle:" + toggle.id + ":revision"] = toggle.revision.ToString();
+            else values.Remove("toggle:" + toggle.id + ":revision");
             try { SaveSettings(item.Profile, values); }
             catch (Exception ex) { MessageBox.Show(DialogOwner, ex.Message, "Could not save setting", MessageBoxButtons.OK, MessageBoxIcon.Error); }
             UpdateHero();

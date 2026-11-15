@@ -181,6 +181,7 @@ namespace CrossCrease
             profileLocations[item.Profile.id] = root;
             SaveLocations();
             LoadProfiles(item.Profile.id);
+            OfferShortcut(item.Profile.id);
         }
 
         void ResetGameLocation(LibraryItem item)

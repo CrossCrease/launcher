@@ -24,7 +24,7 @@ namespace CrossCrease
     public static class BuildInfo
     {
         // Version source of truth for the launcher. Keep CHANGELOG.md in sync.
-        public const string Version = "0.7.2";
+        public const string Version = "0.8.0";
         // Launcher release feed (same format as game package feeds) checked at startup.
         public const string UpdateFeed = "https://github.com/CrossCrease/launcher/releases/latest/download/crosscrease-launcher-feed.json";
         public const string ReleasesPage = "https://github.com/CrossCrease/launcher/releases/latest";
@@ -1722,9 +1722,14 @@ namespace CrossCrease
         HeroPanel hero;
         LibraryView library;
         ContextMenuStrip menu;
+        // Set when started from a game shortcut ("--play <id>"): play that game and close again.
+        readonly string shortcutGame;
 
-        public MainForm()
+        public MainForm() : this(null) { }
+
+        public MainForm(string shortcutGame)
         {
+            this.shortcutGame = string.IsNullOrWhiteSpace(shortcutGame) ? null : shortcutGame.Trim();
             baseDirectory = AppDomain.CurrentDomain.BaseDirectory;
             profilesDirectory = Path.Combine(baseDirectory, "profiles");
             // CROSSCREASE_DATA_DIRECTORY is for automated tests and portable developer setups only.
@@ -1753,7 +1758,9 @@ namespace CrossCrease
 
             themeTimer.Tick += delegate { StepTheme(); };
             BuildInterface();
-            LoadProfiles(null);
+            LoadProfiles(this.shortcutGame);
+            // Stay out of sight while a shortcut starts its game; the window appears if it cannot.
+            if (this.shortcutGame != null && ItemById(this.shortcutGame) != null && ItemById(this.shortcutGame).State == GameState.Ready) Opacity = 0;
         }
 
         [DllImport("dwmapi.dll")]
@@ -1835,6 +1842,14 @@ namespace CrossCrease
         {
             base.OnShown(e);
             library.Focus();
+            if (shortcutGame != null)
+            {
+                var item = ItemById(shortcutGame);
+                if (item != null && item.State == GameState.Ready && LaunchGame(item, null)) { BeginInvoke(new MethodInvoker(Close)); return; }
+                Opacity = 1;
+                WindowState = FormWindowState.Normal;
+                Activate();
+            }
             BeginUpdateCheck();
         }
 
@@ -1912,6 +1927,7 @@ namespace CrossCrease
             if (index < 0) index = items.FindIndex(delegate(LibraryItem item) { return item.State == GameState.Ready; });
             if (index < 0) index = 0;
             library.SetItems(items, index);
+            RefreshShortcutIcons();
         }
 
         static bool IsPlanned(GameProfile profile)
@@ -2052,6 +2068,7 @@ namespace CrossCrease
                 AddMenuItem("Open game folder", delegate { OpenGameFolder(item); }).Enabled = Directory.Exists(GameFolder(item));
                 AddPackageMenuItems(item);
                 AddToggleMenuItems(item);
+                AddMenuItem(ExistingShortcuts(item.Profile).Count > 0 ? "Update shortcut…" : "Create shortcut…", delegate { ShowShortcutDialog(item, false); });
                 menu.Items.Add(new ToolStripSeparator());
             }
             AddMenuItem("Choose cover image…", delegate { ChooseCover(item); });
@@ -2341,17 +2358,17 @@ namespace CrossCrease
 
         // ----- Actions ---------------------------------------------------------------------
 
-        void LaunchGame(LibraryItem item, LaunchOption option)
+        bool LaunchGame(LibraryItem item, LaunchOption option)
         {
-            if (item == null || item.State != GameState.Ready || installing != null) return;
+            if (item == null || item.State != GameState.Ready || installing != null) return false;
             var profile = item.Profile;
-            if (option != null ? !PrepareLaunchOption(item, option) : !EnsureSettings(item, profile.play_settings, null)) return;
+            if (option != null ? !PrepareLaunchOption(item, option) : !EnsureSettings(item, profile.play_settings, null)) return false;
             string executable = option != null && !string.IsNullOrWhiteSpace(option.executable)
                 ? ResolvePath(profile, option.executable) : ProfileExecutable(profile);
             if (!File.Exists(executable))
             {
                 LoadProfiles(profile.id);
-                return;
+                return false;
             }
             string workingDirectory = option != null && !string.IsNullOrWhiteSpace(option.working_directory)
                 ? ResolvePath(profile, option.working_directory) : ResolveWorkingDirectory(profile);
@@ -2366,10 +2383,12 @@ namespace CrossCrease
                 AddSecretEnvironment(profile, startInfo);
                 Process.Start(startInfo);
                 WindowState = FormWindowState.Minimized;
+                return true;
             }
             catch (Exception ex)
             {
                 MessageBox.Show(DialogOwner, ex.Message, "Could not start " + profile.name, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return false;
             }
         }
 
@@ -2433,13 +2452,17 @@ namespace CrossCrease
         }
 
         [STAThread]
-        public static void Main()
+        public static void Main(string[] args)
         {
             try { SetProcessDPIAware(); } catch { }
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             using (var g = Graphics.FromHwnd(IntPtr.Zero)) Ui.Scale = Math.Max(1f, g.DpiX / 96f);
-            Application.Run(new MainForm());
+            // "--play <game id>" comes from a game shortcut (see Shortcuts.cs).
+            string play = null;
+            for (int i = 0; i + 1 < args.Length; i++)
+                if (string.Equals(args[i], PlayArgument, StringComparison.OrdinalIgnoreCase)) play = args[i + 1];
+            Application.Run(new MainForm(play));
         }
     }
 }

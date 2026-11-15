@@ -132,6 +132,7 @@ namespace CrossCrease
                 if (owner.FeedUrl(item.Profile) != null) AddDownloads(item);
                 if (item.Profile.settings != null && item.Profile.settings.Length > 0) AddPlayerSettings(item);
                 AddCover(item);
+                if (item.State != GameState.Planned) AddShortcut(item);
 
                 var close = new FlatButton { Kind = ButtonKind.Primary, Accent = item.Accent, Text = "Done" };
                 PlaceButtons(new[] { close }, true);
@@ -375,6 +376,16 @@ namespace CrossCrease
                 var buttons = new List<FlatButton> { Button("Choose image…", ButtonKind.Secondary, item.Accent, delegate { owner.ChooseCover(Item); }) };
                 if (custom) buttons.Add(Button("Reset cover", ButtonKind.Secondary, item.Accent, delegate { owner.ResetCover(Item); }));
                 PlaceButtons(buttons.ToArray(), false);
+            }
+
+            void AddShortcut(LibraryItem item)
+            {
+                var existing = owner.ExistingShortcuts(item.Profile);
+                Heading("Shortcut", "Start " + item.Profile.name + " from the desktop or the Start menu. The shortcut shows the game's cover.");
+                if (existing.Count > 0) foreach (var link in existing) Value(link, Ui.Muted);
+                else Value("No shortcut yet.", Ui.Muted);
+                PlaceButtons(new[] { Button(existing.Count > 0 ? "Update shortcut…" : "Create shortcut…", ButtonKind.Secondary, item.Accent,
+                    delegate { owner.ShowShortcutDialog(Item, false); Rebuild(); }) }, false);
             }
 
             // ----- Layout helpers --------------------------------------------------------------

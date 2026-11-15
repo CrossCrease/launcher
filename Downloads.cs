@@ -369,6 +369,7 @@ namespace CrossCrease
             }
 
             var job = new InstallJob { ProfileId = item.Profile.id };
+            bool wasReady = item.State == GameState.Ready;
             installing = job;
             string profileId = item.Profile.id, gameName = item.Profile.name;
             UpdateHero();
@@ -399,6 +400,7 @@ namespace CrossCrease
                     LoadProfiles(profileId);
                     if (failure != null)
                         MessageBox.Show(DialogOwner, failure, "Could not install " + gameName, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    else if (!wasReady) OfferShortcut(profileId); // set up just finished
                 });
             });
         }
