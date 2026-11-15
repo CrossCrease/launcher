@@ -2,7 +2,7 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
-## Unreleased
+## 0.7.2 — CrossCrease logo
 
 ### Changed
 - New launcher icon: the CrossCrease "CC" logo (`assets/crosscrease.ico`, 16–256 px), trimmed so the letters fill the icon from edge to edge. `CrossCrease.exe`, the main window, the taskbar and the launcher's dialogs all use it.
