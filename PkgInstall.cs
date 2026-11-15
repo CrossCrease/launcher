@@ -278,6 +278,7 @@ namespace CrossCrease
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
             ShowInTaskbar = false;
+            if (Ui.AppIcon != null) Icon = Ui.AppIcon;
             StartPosition = FormStartPosition.CenterParent;
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(24, 27, 33);
@@ -343,6 +344,7 @@ namespace CrossCrease
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = MinimizeBox = false;
             ShowInTaskbar = false;
+            if (Ui.AppIcon != null) Icon = Ui.AppIcon;
             StartPosition = FormStartPosition.CenterParent;
             AutoScaleMode = AutoScaleMode.None;
             BackColor = Color.FromArgb(24, 27, 33);

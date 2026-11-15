@@ -2,6 +2,12 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## Unreleased
+
+### Changed
+- New launcher icon: the CrossCrease "CC" logo (`assets/crosscrease.ico`, 16–256 px), trimmed so the letters fill the icon from edge to edge. `CrossCrease.exe`, the main window, the taskbar and the launcher's dialogs all use it.
+- The top bar shows the white CrossCrease wordmark, the same one as on crosscrease.com, embedded in `CrossCrease.exe` (source: `assets/crosscrease-wordmark.png`). The colours still follow the selected cover.
+
 ## 0.7.1 — NHL 17 base game online
 
 ### Changed

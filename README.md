@@ -120,7 +120,7 @@ Delete the file to go back to the published feeds. For automated tests, the envi
 
 ## Cover art
 
-The launcher's colours follow the selected cover. CrossCrease finds the main colour of the full-colour cover art: it detects and skips the PS4/PS5 platform banner and the rating strip, and gives the most weight to saturated colours near the centre, which is usually the jersey. The top bar, selection bar, library background, logo, Play button and selection ring are all tinted with that colour. This applies to every game, including greyed-out ones. Hovering a cover lifts it with a soft glow in its own colour. Profiles without a cover image use their `accent` colour.
+The launcher's colours follow the selected cover. CrossCrease finds the main colour of the full-colour cover art: it detects and skips the PS4/PS5 platform banner and the rating strip, and gives the most weight to saturated colours near the centre, which is usually the jersey. The top bar, selection bar, library background, logo, Play button and selection ring are all tinted with that colour. This applies to every game, including greyed-out ones. Hovering a cover lifts it with a soft glow in its own colour. Profiles without a cover image use their `accent` colour. The white CrossCrease wordmark sits in the top bar.
 
 ### Official covers
 

@@ -244,6 +244,50 @@ namespace CrossCrease
             return FromHsl(avg.GetHue(), Math.Max(0.6f, Math.Min(0.95f, avg.GetSaturation() * 1.15f)), Math.Max(0.44f, Math.Min(0.58f, avg.GetBrightness())));
         }
 
+        static Image textLogo;
+        static bool textLogoLoaded;
+
+        static Icon appIcon;
+        static bool appIconLoaded;
+
+        // The CrossCrease "CC" logo icon with every size (16-256 px), embedded in the executable; null if it cannot be read.
+        public static Icon AppIcon
+        {
+            get
+            {
+                if (!appIconLoaded)
+                {
+                    appIconLoaded = true;
+                    try
+                    {
+                        using (var stream = typeof(Ui).Assembly.GetManifestResourceStream("CrossCrease.Icon.ico"))
+                            if (stream != null) appIcon = new Icon(stream);
+                    }
+                    catch { appIcon = null; }
+                }
+                return appIcon;
+            }
+        }
+
+        // The CrossCrease text logo embedded in the executable; null if it cannot be read.
+        public static Image TextLogo
+        {
+            get
+            {
+                if (!textLogoLoaded)
+                {
+                    textLogoLoaded = true;
+                    try
+                    {
+                        using (var stream = typeof(Ui).Assembly.GetManifestResourceStream("CrossCrease.TextLogo.png"))
+                            if (stream != null) using (var raw = Image.FromStream(stream)) textLogo = new Bitmap(raw);
+                    }
+                    catch { textLogo = null; }
+                }
+                return textLogo;
+            }
+        }
+
         public static int S(float value) { return (int)Math.Round(value * Scale); }
         public static float F(float value) { return value * Scale; }
 
@@ -751,22 +795,30 @@ namespace CrossCrease
             var g = e.Graphics;
             Ui.HighQuality(g);
             g.Clear(Ui.TopBarColor);
-            float x = Ui.F(48), cy = Height / 2f, r = Ui.F(11);
-            using (var brand = new SolidBrush(Ui.Mix(Ui.Theme, Color.White, 0.1f)))
-                g.FillPie(brand, x, cy - r + Ui.F(5), r * 2, r * 2, 180, 180);
-            using (var line = new Pen(Color.FromArgb(200, 255, 255, 255), Ui.F(2)))
-                g.DrawLine(line, x - Ui.F(3), cy + Ui.F(6), x + r * 2 + Ui.F(3), cy + Ui.F(6));
-            using (var font = Ui.HeavyFont(14f))
+            float x = Ui.F(44), cy = Height / 2f, right;
+            var logo = Ui.TextLogo;
+            if (logo != null)
+            {
+                float lh = Ui.F(22), lw = lh * logo.Width / logo.Height;
+                g.DrawImage(logo, x, cy - lh / 2f, lw, lh);
+                right = x + lw;
+            }
+            else
+            {
+                using (var font = Ui.HeavyFont(14f))
+                using (var text = new SolidBrush(Ui.Text))
+                {
+                    var size = g.MeasureString("CROSSCREASE", font);
+                    g.DrawString("CROSSCREASE", font, text, x, cy - size.Height / 2f);
+                    right = x + size.Width;
+                }
+            }
             using (var versionFont = new Font("Segoe UI", 8.5f))
-            using (var text = new SolidBrush(Ui.Text))
             using (var dim = new SolidBrush(Ui.Dim))
             {
-                var size = g.MeasureString("CROSSCREASE", font);
-                float tx = x + r * 2 + Ui.F(12);
-                g.DrawString("CROSSCREASE", font, text, tx, cy - size.Height / 2f);
                 string version = "v" + BuildInfo.Version;
                 var versionSize = g.MeasureString(version, versionFont);
-                g.DrawString(version, versionFont, dim, tx + size.Width + Ui.F(2), cy - versionSize.Height / 2f + Ui.F(2));
+                g.DrawString(version, versionFont, dim, right + Ui.F(8), cy - versionSize.Height / 2f + Ui.F(4));
             }
         }
     }
@@ -1696,7 +1748,8 @@ namespace CrossCrease
             ForeColor = Ui.Text;
             Font = new Font("Segoe UI", 10f);
             KeyPreview = true;
-            try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
+            if (Ui.AppIcon != null) Icon = Ui.AppIcon;
+            else try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             themeTimer.Tick += delegate { StepTheme(); };
             BuildInterface();
