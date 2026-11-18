@@ -65,6 +65,10 @@
       "launches": ["play"]
     }
   ],
+  "crash_reports": {
+    "crash_file": "{data}\\user\\log\\crash.txt",
+    "log_files": ["{data}\\user\\log\\shad_log.txt"]
+  },
   "cover_download": { "source": "wikipedia", "file": "NHL 17 cover art.jpg" },
   "accent": "#27C9B3"
 }

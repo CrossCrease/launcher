@@ -24,10 +24,12 @@ namespace CrossCrease
     public static class BuildInfo
     {
         // Version source of truth for the launcher. Keep CHANGELOG.md in sync.
-        public const string Version = "0.8.0";
+        public const string Version = "0.9.0";
         // Launcher release feed (same format as game package feeds) checked at startup.
         public const string UpdateFeed = "https://github.com/CrossCrease/launcher/releases/latest/download/crosscrease-launcher-feed.json";
         public const string ReleasesPage = "https://github.com/CrossCrease/launcher/releases/latest";
+        // Where crash and problem reports go (the CrossCrease website; see Reports.cs).
+        public const string ReportUrl = "https://crosscrease.com/dashboard/api/public/report";
     }
 
     public sealed class GameProfile
@@ -63,6 +65,8 @@ namespace CrossCrease
         public string[] play_settings { get; set; }
         // Lets players install the game from their own package files (for example PS4 .pkg).
         public PackageInstallOptions package_install { get; set; }
+        // Where the game leaves a crash file and its logs, so the launcher can offer to send a report.
+        public CrashReportOptions crash_reports { get; set; }
         public string SourceFile { get; set; }
     }
 
@@ -1851,6 +1855,14 @@ namespace CrossCrease
                 Activate();
             }
             BeginUpdateCheck();
+            BeginInvoke(new MethodInvoker(delegate { OfferCrashReports(null); }));
+        }
+
+        // Coming back to the launcher after a game closed: offer a report if it crashed.
+        protected override void OnActivated(EventArgs e)
+        {
+            base.OnActivated(e);
+            if (Opacity > 0 && IsHandleCreated) BeginInvoke(new MethodInvoker(delegate { OfferCrashReports(null); }));
         }
 
         protected override void OnKeyDown(KeyEventArgs e)
@@ -2069,6 +2081,7 @@ namespace CrossCrease
                 AddPackageMenuItems(item);
                 AddToggleMenuItems(item);
                 AddMenuItem(ExistingShortcuts(item.Profile).Count > 0 ? "Update shortcut…" : "Create shortcut…", delegate { ShowShortcutDialog(item, false); });
+                AddMenuItem("Report a problem…", delegate { ShowReportDialog(item, null, null); });
                 menu.Items.Add(new ToolStripSeparator());
             }
             AddMenuItem("Choose cover image…", delegate { ChooseCover(item); });
@@ -2362,6 +2375,8 @@ namespace CrossCrease
         {
             if (item == null || item.State != GameState.Ready || installing != null) return false;
             var profile = item.Profile;
+            // A crash from the last session is offered before its log is replaced by the new one.
+            OfferCrashReports(item);
             if (option != null ? !PrepareLaunchOption(item, option) : !EnsureSettings(item, profile.play_settings, null)) return false;
             string executable = option != null && !string.IsNullOrWhiteSpace(option.executable)
                 ? ResolvePath(profile, option.executable) : ProfileExecutable(profile);

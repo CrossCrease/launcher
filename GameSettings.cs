@@ -133,6 +133,7 @@ namespace CrossCrease
                 if (item.Profile.settings != null && item.Profile.settings.Length > 0) AddPlayerSettings(item);
                 AddCover(item);
                 if (item.State != GameState.Planned) AddShortcut(item);
+                if (item.State != GameState.Planned) AddReport(item);
 
                 var close = new FlatButton { Kind = ButtonKind.Primary, Accent = item.Accent, Text = "Done" };
                 PlaceButtons(new[] { close }, true);
@@ -386,6 +387,12 @@ namespace CrossCrease
                 else Value("No shortcut yet.", Ui.Muted);
                 PlaceButtons(new[] { Button(existing.Count > 0 ? "Update shortcut…" : "Create shortcut…", ButtonKind.Secondary, item.Accent,
                     delegate { owner.ShowShortcutDialog(Item, false); Rebuild(); }) }, false);
+            }
+
+            void AddReport(LibraryItem item)
+            {
+                Heading("Report a problem", "Something not working in " + item.Profile.name + "? Send a short report to the CrossCrease team. You see everything before it is sent.");
+                PlaceButtons(new[] { Button("Report a problem…", ButtonKind.Secondary, item.Accent, delegate { owner.ShowReportDialog(Item, null, null); }) }, false);
             }
 
             // ----- Layout helpers --------------------------------------------------------------

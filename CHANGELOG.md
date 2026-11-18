@@ -2,6 +2,14 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## 0.9.0 — Crash and problem reports
+
+### Added
+- Crash reports: when a game crashed, CrossCrease offers to send a crash report the next time it opens, when you come back to it, or before the next **Play**. You can add what you were doing, leave out the game log, share your online ID or not, and see the whole report with **Show what will be sent**. Nothing is sent unless you choose **Send report**.
+- **Report a problem…** in the cover's right-click menu and in **Game settings** sends a short report with your description.
+- Reports go to the CrossCrease website (crosscrease.com), where only the CrossCrease team reads them; they are deleted after 90 days. Passwords, tokens, e-mail addresses, your Windows user name and (unless you share it) your online ID are removed before sending.
+- Profile field `crash_reports` (`crash_file`, `log_files`). NHL 17 uses it; it needs NHL 17 runtime 0.4.4 or newer for crashes the emulator catches itself.
+
 ## 0.8.0 — NHL 17 starts the base game
 
 ### Changed

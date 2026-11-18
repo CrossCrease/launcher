@@ -42,7 +42,8 @@ CrossCrease never downloads or distributes game files, firmware, keys or saves. 
   - **Player settings**: values such as your online ID, password and server, with **Save player settings**. Passwords are shown as dots.
   - **Cover**: **Choose image…** and **Reset cover**.
   - **Shortcut**: **Create shortcut…** (or **Update shortcut…**), see below.
-- **Right-click** a cover for quick actions: game settings, play, game files, start with the game update, open the game folder, check for updates, remove downloads, create a shortcut, and the cover image.
+  - **Report a problem**: **Report a problem…**, see below.
+- **Right-click** a cover for quick actions: game settings, play, game files, start with the game update, open the game folder, check for updates, remove downloads, create a shortcut, report a problem, and the cover image.
 - Arrow keys move through the library. **F5** or **Refresh** rescans the profiles folder and checks for updates.
 
 ### Game shortcuts
@@ -54,6 +55,14 @@ A shortcut starts a game with one click, from the desktop or the Start menu (in 
 - The shortcut runs `CrossCrease.exe --play <game id>`. It starts the game exactly like **Play** (same settings and toggles) and CrossCrease closes again right away. If the game cannot start yet (for example, the runtime is missing), CrossCrease opens with that game selected instead.
 - When the cover changes (your own image, a downloaded cover, or **Reset cover**), the shortcuts CrossCrease made get the new icon. The icons are kept in `%LOCALAPPDATA%\CrossCrease\shortcuts`, together with `shortcuts.json`, the list of shortcuts CrossCrease made.
 - Shortcuts point at `CrossCrease.exe` where it is now. Launcher updates keep that path. If you move the launcher folder, create the shortcuts again.
+
+### Crash and problem reports
+
+- When a game crashes, its runtime leaves a crash file. The next time CrossCrease opens (or you come back to it, or press **Play**), it asks whether to send a crash report. Each crash is offered once; **Don't send** sends nothing.
+- **Report a problem…** (right-click a cover, or **Game settings**) sends a report without a crash, with your description of what went wrong.
+- A report contains your comment, the crash file, the end of the game log (you can leave it out), the launcher and runtime versions, your Windows version and graphics card, and your online ID only if you tick **Include my online ID**. **Show what will be sent** shows the whole report before you send it.
+- CrossCrease removes passwords (including your saved one), tokens, tickets, e-mail addresses and your Windows user name from the report, and your online ID unless you share it.
+- Reports go to `https://crosscrease.com/dashboard/api/public/report`. Only the CrossCrease team can read them, and the website deletes them after 90 days. For local website testing, the environment variable `CROSSCREASE_REPORT_URL` sends them elsewhere.
 
 Cover states:
 
@@ -197,6 +206,7 @@ Both use the .NET Framework 4 `csc.exe` that ships with Windows; nothing else ne
 - `search_roots` are tried automatically, then the user's saved **Locate game** choice. A saved choice that no longer matches the profile is ignored, so changing a profile's layout falls back to discovery.
 - `package_feed` (optional) is the feed URL. `packages` lists the package ids that must be installed before **Play** is offered.
 - `package_install` (optional) lets players install the game from their own package files: `{ "format": "ps4_pkg", "title_ids": ["CUSA04326"], "folder": "%USERPROFILE%\\Documents\\CrossCrease\\NHL 17" }`. `title_ids` limits which games are accepted (empty accepts any), and `folder` is the suggested install location (`{launcher}` and environment variables work). The game is unpacked into `<folder>\<title id>` and its update into `<folder>\<title id>-UPDATE`, and the game's location is saved for the profile.
+- `crash_reports` (optional) enables crash reports for the game: `{ "crash_file": "{data}\\user\\log\\crash.txt", "log_files": ["{data}\\user\\log\\shad_log.txt"] }`. `crash_file` is where the game's runtime leaves a few `key=value` lines when it crashes (`kind`, `code`, `address`, `time`, `version`); after the player answered, CrossCrease renames it to `crash.previous.txt`. The last 256 KB of `log_files` (shared between them) can go with a report. Without this field, **Report a problem…** still works, without a log.
 - `minimum_versions` (optional) maps a package id to the oldest installed version the profile can start with. An older installed version counts as not installed, so the game shows **Set up** and offers the current download (saves and settings are kept). Use it when a profile starts relying on files that only newer packages contain.
 - `launch_options` (optional) add buttons next to Play. Each may list its own `packages` and `settings`, and may override `executable`, `arguments_template` and `working_directory`.
 - `settings` (optional) are values asked for once in a small dialog and saved per user. `play_settings` lists the ones **Play** asks for before the first launch; a launch option asks for its own `settings`. `pattern` is a regular expression the value must match; values can never contain quotes. `default` pre-fills the field. `"secret": true` masks the field and stores the value encrypted for the Windows user (DPAPI, `dpapi:` prefix in `settings.json`); a value that cannot be decrypted, for example after copying the file to another PC, counts as missing and is asked for again. A secret value is never put on a command line: `{setting:<id>}` expands to nothing for it, and the launched program receives it in the environment variable `CROSSCREASE_SETTING_<ID>` (the id in upper case, other characters than letters, digits and `_` replaced by `_`; `password` becomes `CROSSCREASE_SETTING_PASSWORD`). Environment variables in a template are expanded before setting values are inserted, so a value containing `%` is passed unchanged.
