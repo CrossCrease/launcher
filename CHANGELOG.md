@@ -2,6 +2,11 @@
 
 All notable changes to the CrossCrease launcher are documented here. The launcher uses [semantic versioning](https://semver.org/). The version source of truth is `BuildInfo.Version` in `CrossCrease.cs`.
 
+## Unreleased
+
+### Changed
+- Repository: the CrossCrease CC logo heads the README (`assets/crosscrease-cc-logo.png`), and `assets/social-preview.png` (1280 × 640) is the repository's social preview image. Neither is part of the release package.
+
 ## 0.9.0 — Crash and problem reports
 
 ### Added

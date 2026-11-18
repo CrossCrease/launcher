@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/crosscrease-cc-logo.png" alt="CrossCrease" width="180"></p>
+
 # CrossCrease Launcher
 
 The CrossCrease launcher is a small Windows app that shows every CrossCrease game profile as a cover in one library. It downloads and updates the CrossCrease runtime each game needs, finds your own copy of the game, and starts it. Games that are ready appear in full colour. Games that still need a download, have not been found, or are planned for a future release stay visible in greyscale.
