@@ -4,7 +4,11 @@ All notable changes to the CrossCrease launcher are documented here. The launche
 
 ## Unreleased
 
+### Fixed
+- NHL 17 under Linux (Proton or Wine): **Play** and renaming an online ID ran Windows PowerShell, which Proton and Wine do not provide, so a window flashed and the game never started. The NHL 17 profile now runs the runtime's own `tools\crosscrease-nhl17.exe` and needs NHL 17 runtime 0.4.6 or newer; older runtimes show **Set up** and offer the download. Release this launcher only after runtime 0.4.6 is published.
+
 ### Changed
+- NHL 17: a start that fails shows a message naming its `launch.log` (before, the hidden PowerShell window swallowed it). The README's troubleshooting lists where the launch and emulator logs are, also inside a Proton prefix.
 - Repository: the CrossCrease CC logo heads the README (`assets/crosscrease-cc-logo.png`), and `assets/social-preview.png` (1280 × 640) is the repository's social preview image. Neither is part of the release package.
 
 ## 0.9.0 — Crash and problem reports

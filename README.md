@@ -137,7 +137,7 @@ Delete the file to go back to the published feeds. For automated tests, the envi
 
 ## Included profiles
 
-- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime 0.4.0 or newer, which includes the online connection files. **Play** connects to the CrossCrease server with the base game (1.00) by default, and with the game update (1.08) when **Start with the game update** is turned on; players only meet others with the same version.
+- NHL 17: supported. Downloads the CrossCrease NHL 17 runtime 0.4.6 or newer, which includes the online connection files and `tools\crosscrease-nhl17.exe`, the program **Play** and online ID renames run (no PowerShell needed, so it also works under Wine/Proton). **Play** connects to the CrossCrease server with the base game (1.00) by default, and with the game update (1.08) when **Start with the game update** is turned on; players only meet others with the same version.
 - NHL 15, 16, 18–27: planned (`"status": "planned"`), shown as "Coming soon".
 
 ## Cover art
@@ -239,6 +239,7 @@ Use **Import profile** to copy another JSON profile into the launcher, or place 
 - **"Failed its integrity check":** the download was damaged or changed. Nothing was installed; try again.
 - **A game still says Set up:** select it and press the button in the bar. It names the step that is missing (your game files or the runtime download).
 - **The game starts without its update:** the update must sit next to the base game folder, with the same name plus `-UPDATE`, and **Start with the game update** must be on in **Game settings** (NHL 17 starts the base game by default).
+- **NHL 17 does not start, or a window flashes and nothing happens:** every **Play** writes `%LOCALAPPDATA%\CrossCrease\games\nhl17\logs\online-<date-time>\launch.log`, and a start that fails also shows a message. If no new `online-…` folder appears, the start program did not run: update the launcher and press **Set up** to get the current runtime. The emulator's own log is `games\nhl17\user\log\shad_log.txt`. Under Linux with Proton or Wine these folders are inside the prefix, for example `…/pfx/drive_c/users/steamuser/AppData/Local/CrossCrease/`; for Proton's own log, set the launch option `PROTON_LOG=1 %command%` (it writes `~/steam-<appid>.log`).
 - **A custom cover does not appear:** make sure it is a PNG, JPG, or BMP file, then use **Refresh**.
 - **No covers appear:** check that `profiles\*.json` sits next to `CrossCrease.exe` and contains valid JSON.
 

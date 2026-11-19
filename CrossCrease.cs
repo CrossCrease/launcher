@@ -2285,7 +2285,7 @@ namespace CrossCrease
             string required = string.IsNullOrWhiteSpace(profile.required_file_relative)
                 ? ResolvePath(profile, profile.required_file) : Path.GetFullPath(Path.Combine(root, profile.required_file_relative));
             if (string.IsNullOrWhiteSpace(required)) required = executable;
-            return File.Exists(executable) && File.Exists(required);
+            return ExecutableFound(profile, executable) && File.Exists(required);
         }
 
         bool ProfileAvailable(GameProfile profile)
@@ -2293,7 +2293,15 @@ namespace CrossCrease
             if (IsPlanned(profile)) return false;
             string executable = ProfileExecutable(profile);
             string required = ProfileRequiredFile(profile);
-            return File.Exists(executable) && File.Exists(required);
+            return ExecutableFound(profile, executable) && File.Exists(required);
+        }
+
+        // A program that comes with a package ({package:<id>} in "executable") is checked by the package
+        // step (MissingPackages), so finding the game does not depend on the package being installed.
+        static bool ExecutableFound(GameProfile profile, string executable)
+        {
+            if (string.IsNullOrWhiteSpace(profile.executable_relative) && PackageToken.IsMatch(profile.executable ?? "")) return true;
+            return File.Exists(executable);
         }
 
         Color ProfileColor(GameProfile profile)

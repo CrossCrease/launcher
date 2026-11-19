@@ -5,9 +5,9 @@
   "description": "CrossCrease NHL 17. The launcher downloads the CrossCrease runtime, which includes the online connection files; you supply your own copy of the game. Play starts the base game (1.00), the version most players have; update 1.08 is optional and only meets other 1.08 players online.",
   "package_feed": "https://github.com/CrossCrease/nhl17/releases/latest/download/crosscrease-nhl17-feed.json",
   "packages": ["runtime"],
-  "minimum_versions": { "runtime": "0.4.0" },
-  "executable": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-  "arguments_template": "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File \"{package:runtime}\\tools\\run_nhl17_online.ps1\" -Game \"{required_file}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\"",
+  "minimum_versions": { "runtime": "0.4.6" },
+  "executable": "{package:runtime}\\tools\\crosscrease-nhl17.exe",
+  "arguments_template": "play -Game \"{required_file}\" -DataDirectory \"{data}\" -ServerAddress \"{setting:server_address}\" -OnlineId \"{setting:online_id}\"",
   "working_directory": "{data}",
   "required_file_relative": "eboot.bin",
   "search_roots": [
@@ -33,8 +33,8 @@
         "action_note": "Recommended. Your account keeps everything: HUT team, stats, friends and password. Online IDs can be changed once a week, and {previous} stays reserved for you for 30 days.",
         "skip_label": "Just switch to {value}",
         "skip_note": "Play as a different account: an online ID you already have, or a new one. {previous} keeps its HUT team and stats. Choose this too if the server operator already renamed you.",
-        "executable": "%WINDIR%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-        "arguments_template": "-NoProfile -ExecutionPolicy Bypass -File \"{package:runtime}\\tools\\rename_online_id.ps1\" -OnlineId \"{previous}\" -NewOnlineId \"{value}\" -ServerAddress \"{setting:server_address}\""
+        "executable": "{package:runtime}\\tools\\crosscrease-nhl17.exe",
+        "arguments_template": "rename -OnlineId \"{previous}\" -NewOnlineId \"{value}\" -ServerAddress \"{setting:server_address}\""
       }
     },
     {
