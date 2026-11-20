@@ -4,6 +4,12 @@ All notable changes to the CrossCrease launcher are documented here. The launche
 
 ## Unreleased
 
+### Added
+- Game options: profiles can offer choices between several values (`choices`), shown as drop-down lists under **Game options** in **Game settings** and in the right-click menu. NHL 17 offers **Render resolution** (900p original, 1080p, 1440p) and **Frame rate** (60 original, 120; offline games only, online matches stay near 60). Both need NHL 17 runtime 0.4.9 or newer; with an older runtime they are shown disabled and the game starts as before.
+
+### Fixed
+- Game settings keeps its scroll position when a setting changes; before, it could jump back to the top.
+
 ## 0.9.1 — NHL 17 on Linux (Proton/Wine)
 
 ### Fixed

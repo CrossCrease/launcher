@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace CrossCrease
@@ -99,6 +100,7 @@ namespace CrossCrease
                 foreach (var id in owner.AllPackageIds(item.Profile))
                     parts.Add(id + "=" + owner.packages.InstalledVersion(item.Profile.id, id) + "/" + owner.packages.PreviousVersion(item.Profile.id, id));
                 foreach (var toggle in owner.Toggles(item.Profile)) parts.Add(toggle.id + "=" + (owner.ToggleValue(item.Profile, toggle) ? "on" : "off"));
+                foreach (var choice in owner.Choices(item.Profile)) parts.Add(choice.id + "=" + owner.ChoiceValue(item.Profile, choice).value);
                 PackageFeed feed;
                 if (owner.feeds.TryGetValue(item.Profile.id, out feed)) parts.Add(feed.release);
                 string error;
@@ -114,6 +116,10 @@ namespace CrossCrease
                 settingBoxes.Clear();
                 signature = Signature();
                 int scroll = -content.AutoScrollPosition.Y;
+                // Controls are placed at unscrolled positions, and a focused control that goes away would
+                // make the panel scroll to the next one; the old position is restored at the end.
+                ActiveControl = null;
+                content.AutoScrollPosition = Point.Empty;
                 content.SuspendLayout();
                 var old = new Control[content.Controls.Count];
                 content.Controls.CopyTo(old, 0);
@@ -131,6 +137,7 @@ namespace CrossCrease
                 AddGameFiles(item);
                 if (owner.FeedUrl(item.Profile) != null) AddDownloads(item);
                 if (item.Profile.settings != null && item.Profile.settings.Length > 0) AddPlayerSettings(item);
+                if (owner.Choices(item.Profile).Any()) AddChoices(item);
                 AddCover(item);
                 if (item.State != GameState.Planned) AddShortcut(item);
                 if (item.State != GameState.Planned) AddReport(item);
@@ -366,6 +373,42 @@ namespace CrossCrease
                 }
                 catch (Exception ex) { settingsMessage = ex.Message; settingsMessageIsError = true; }
                 Rebuild();
+            }
+
+            void AddChoices(LibraryItem item)
+            {
+                Heading("Game options", "Applied each time you press Play.");
+                foreach (var choice in owner.Choices(item.Profile))
+                {
+                    string problem = owner.ChoiceProblem(item, choice);
+                    content.Controls.Add(new Label { Text = choice.label ?? choice.id, Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold), AutoSize = true,
+                        Location = new Point(Pad, y), ForeColor = problem == null ? Ui.Text : Ui.Dim });
+                    y += Ui.S(26);
+                    var current = owner.ChoiceValue(item.Profile, choice);
+                    var box = new ComboBox {
+                        DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Location = new Point(Pad, y), Width = Ui.S(320),
+                        BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, Enabled = problem == null, AccessibleName = choice.label ?? choice.id
+                    };
+                    var shown = new List<LaunchChoiceOption>();
+                    foreach (var option in choice.options)
+                    {
+                        if (option == null || string.IsNullOrWhiteSpace(option.value)) continue;
+                        shown.Add(option);
+                        box.Items.Add(option.label ?? option.value);
+                        if (option == current) box.SelectedIndex = box.Items.Count - 1;
+                    }
+                    var captured = choice;
+                    box.SelectionChangeCommitted += delegate
+                    {
+                        if (box.SelectedIndex < 0) return;
+                        owner.SetChoice(Item, captured, shown[box.SelectedIndex]);
+                    };
+                    content.Controls.Add(box);
+                    y += box.Height + Ui.S(6);
+                    if (!string.IsNullOrWhiteSpace(choice.description)) Note(choice.description);
+                    if (problem != null) Value(problem, Ui.Amber);
+                    y += Ui.S(6);
+                }
             }
 
             void AddCover(LibraryItem item)

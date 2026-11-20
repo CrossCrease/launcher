@@ -60,6 +60,8 @@ namespace CrossCrease
         public Dictionary<string, string> minimum_versions { get; set; }
         public LaunchOption[] launch_options { get; set; }
         public LaunchToggle[] toggles { get; set; }
+        // Choices between several values, shown under "Game options" in Game settings.
+        public LaunchChoice[] choices { get; set; }
         public ProfileSetting[] settings { get; set; }
         // Settings the main Play button asks for once before the first launch (for example an online ID).
         public string[] play_settings { get; set; }
@@ -2080,6 +2082,7 @@ namespace CrossCrease
                 AddMenuItem("Open game folder", delegate { OpenGameFolder(item); }).Enabled = Directory.Exists(GameFolder(item));
                 AddPackageMenuItems(item);
                 AddToggleMenuItems(item);
+                AddChoiceMenuItems(item);
                 AddMenuItem(ExistingShortcuts(item.Profile).Count > 0 ? "Update shortcut…" : "Create shortcut…", delegate { ShowShortcutDialog(item, false); });
                 AddMenuItem("Report a problem…", delegate { ShowReportDialog(item, null, null); });
                 menu.Items.Add(new ToolStripSeparator());
@@ -2399,7 +2402,8 @@ namespace CrossCrease
             {
                 if (!string.IsNullOrWhiteSpace(workingDirectory)) Directory.CreateDirectory(workingDirectory);
                 var startInfo = new ProcessStartInfo(executable) {
-                    Arguments = ProfileArguments(profile, option != null ? option.arguments_template : null) + ToggleArguments(item, option != null ? option.id : "play"),
+                    Arguments = ProfileArguments(profile, option != null ? option.arguments_template : null) + ToggleArguments(item, option != null ? option.id : "play")
+                        + ChoiceArguments(item, option != null ? option.id : "play"),
                     WorkingDirectory = workingDirectory,
                     UseShellExecute = false
                 };
