@@ -23,6 +23,32 @@ namespace CrossCrease
         public string[] launches { get; set; }
     }
 
+    // A per-game choice between several values that adds launch arguments, for example a render resolution.
+    // Saved as "choice:<id>" in the game's settings.json.
+    public sealed class LaunchChoice
+    {
+        public string id { get; set; }
+        public string label { get; set; }
+        public string description { get; set; }
+        // The value of the option used until the player picks another one.
+        public string @default { get; set; }
+        // As for toggles: raise it to reset everyone's saved choice to the default once.
+        public int revision { get; set; }
+        public LaunchChoiceOption[] options { get; set; }
+        // Launches it applies to: "play" is the main Play button, other values are launch_options ids.
+        public string[] launches { get; set; }
+        // Oldest installed package versions that understand the arguments ({ "runtime": "0.4.9" }). With an
+        // older package the choice is shown disabled and the default option's arguments are used.
+        public Dictionary<string, string> minimum_versions { get; set; }
+    }
+
+    public sealed class LaunchChoiceOption
+    {
+        public string value { get; set; }
+        public string label { get; set; }
+        public string arguments { get; set; }
+    }
+
     // Setting a game up (your game files first, then the CrossCrease downloads) and per-game toggles.
     public sealed partial class MainForm
     {
@@ -153,6 +179,102 @@ namespace CrossCrease
                 bool value = ToggleValue(item.Profile, toggle);
                 var entry = AddMenuItem(toggle.label ?? toggle.id, delegate { SetToggle(item, captured, !value); });
                 entry.Checked = value;
+            }
+        }
+
+        // ----- Choices ---------------------------------------------------------------------------
+
+        IEnumerable<LaunchChoice> Choices(GameProfile profile)
+        {
+            if (profile.choices == null) yield break;
+            foreach (var choice in profile.choices)
+                if (choice != null && !string.IsNullOrWhiteSpace(choice.id) && choice.options != null && choice.options.Length > 0) yield return choice;
+        }
+
+        static LaunchChoiceOption FindChoiceOption(LaunchChoice choice, string value)
+        {
+            if (value == null) return null;
+            foreach (var option in choice.options)
+                if (option != null && string.Equals(option.value, value, StringComparison.OrdinalIgnoreCase)) return option;
+            return null;
+        }
+
+        LaunchChoiceOption DefaultChoiceOption(LaunchChoice choice)
+        {
+            return FindChoiceOption(choice, choice.@default) ?? choice.options[0];
+        }
+
+        LaunchChoiceOption ChoiceValue(GameProfile profile, LaunchChoice choice)
+        {
+            var values = LoadSettings(profile);
+            string value, savedRevision;
+            int revision = 0;
+            if (values.TryGetValue("choice:" + choice.id + ":revision", out savedRevision)) int.TryParse(savedRevision, out revision);
+            if (revision == choice.revision && values.TryGetValue("choice:" + choice.id, out value))
+            {
+                var saved = FindChoiceOption(choice, value);
+                if (saved != null) return saved;
+            }
+            return DefaultChoiceOption(choice);
+        }
+
+        void SetChoice(LibraryItem item, LaunchChoice choice, LaunchChoiceOption option)
+        {
+            var values = LoadSettings(item.Profile);
+            values["choice:" + choice.id] = option.value;
+            if (choice.revision != 0) values["choice:" + choice.id + ":revision"] = choice.revision.ToString();
+            else values.Remove("choice:" + choice.id + ":revision");
+            try { SaveSettings(item.Profile, values); }
+            catch (Exception ex) { MessageBox.Show(DialogOwner, ex.Message, "Could not save setting", MessageBoxButtons.OK, MessageBoxIcon.Error); }
+            UpdateHero();
+        }
+
+        // Null when the choice can be used; otherwise why not (an installed package is too old).
+        string ChoiceProblem(LibraryItem item, LaunchChoice choice)
+        {
+            if (choice.minimum_versions == null) return null;
+            foreach (var pair in choice.minimum_versions)
+            {
+                string installed = packages.InstalledVersion(item.Profile.id, pair.Key);
+                if (installed == null || string.IsNullOrWhiteSpace(pair.Value)) continue;
+                if (PackageStore.CompareVersions(installed, pair.Value) < 0)
+                    return "Needs CrossCrease " + pair.Key + " " + pair.Value + " or newer (installed: " + installed + "). Update it under CrossCrease downloads.";
+            }
+            return null;
+        }
+
+        string ChoiceArguments(LibraryItem item, string launchId)
+        {
+            var parts = new List<string>();
+            foreach (var choice in Choices(item.Profile))
+            {
+                bool applies = choice.launches == null || choice.launches.Length == 0
+                    ? launchId == "play" : Array.IndexOf(choice.launches, launchId) >= 0;
+                if (!applies) continue;
+                var option = ChoiceProblem(item, choice) == null ? ChoiceValue(item.Profile, choice) : DefaultChoiceOption(choice);
+                if (option != null && !string.IsNullOrWhiteSpace(option.arguments)) parts.Add(option.arguments.Trim());
+            }
+            return parts.Count == 0 ? "" : " " + string.Join(" ", parts.ToArray());
+        }
+
+        void AddChoiceMenuItems(LibraryItem item)
+        {
+            foreach (var choice in Choices(item.Profile))
+            {
+                if (ChoiceProblem(item, choice) != null) continue;
+                var current = ChoiceValue(item.Profile, choice);
+                var parent = new ToolStripMenuItem(choice.label ?? choice.id) { ForeColor = Ui.Text, Padding = new Padding(4, 3, 4, 3) };
+                parent.DropDown.BackColor = menu.BackColor;
+                foreach (var option in choice.options)
+                {
+                    if (option == null || string.IsNullOrWhiteSpace(option.value)) continue;
+                    var capturedChoice = choice;
+                    var capturedOption = option;
+                    var entry = new ToolStripMenuItem(option.label ?? option.value) { ForeColor = Ui.Text, Padding = new Padding(4, 3, 4, 3), Checked = option == current };
+                    entry.Click += delegate { SetChoice(item, capturedChoice, capturedOption); };
+                    parent.DropDownItems.Add(entry);
+                }
+                menu.Items.Add(parent);
             }
         }
 
