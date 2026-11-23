@@ -4,6 +4,8 @@ All notable changes to the CrossCrease launcher are documented here. The launche
 
 ## Unreleased
 
+## 0.11.0 — 720p render resolution
+
 ### Added
 - NHL 17: **Render resolution** now offers **720p** (1280x720) for slower graphics cards: about a third fewer pixels to draw than the game's own 900p. It needs NHL 17 runtime 0.4.11 or newer; with an older runtime it is listed with a hint to update and cannot be picked.
 - Profiles: a choice's options can name their own `minimum_versions`, so an option can be added later without disabling the whole choice for players with an older package. If the saved option needs a newer package than the one installed, the default option is used.
