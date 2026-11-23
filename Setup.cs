@@ -47,6 +47,9 @@ namespace CrossCrease
         public string value { get; set; }
         public string label { get; set; }
         public string arguments { get; set; }
+        // Optional, for an option added after the choice itself ({ "runtime": "0.4.11" }). With an older
+        // package the option cannot be picked and the default option is used instead.
+        public Dictionary<string, string> minimum_versions { get; set; }
     }
 
     // Setting a game up (your game files first, then the CrossCrease downloads) and per-game toggles.
@@ -232,15 +235,34 @@ namespace CrossCrease
         // Null when the choice can be used; otherwise why not (an installed package is too old).
         string ChoiceProblem(LibraryItem item, LaunchChoice choice)
         {
-            if (choice.minimum_versions == null) return null;
-            foreach (var pair in choice.minimum_versions)
+            return VersionProblem(item, choice.minimum_versions, "Needs");
+        }
+
+        // Null when the option can be picked; otherwise why not (an installed package is too old).
+        string OptionProblem(LibraryItem item, LaunchChoiceOption option)
+        {
+            return VersionProblem(item, option.minimum_versions, (option.label ?? option.value) + " needs");
+        }
+
+        string VersionProblem(LibraryItem item, Dictionary<string, string> minimum, string lead)
+        {
+            if (minimum == null) return null;
+            foreach (var pair in minimum)
             {
                 string installed = packages.InstalledVersion(item.Profile.id, pair.Key);
                 if (installed == null || string.IsNullOrWhiteSpace(pair.Value)) continue;
                 if (PackageStore.CompareVersions(installed, pair.Value) < 0)
-                    return "Needs CrossCrease " + pair.Key + " " + pair.Value + " or newer (installed: " + installed + "). Update it under CrossCrease downloads.";
+                    return lead + " CrossCrease " + pair.Key + " " + pair.Value + " or newer (installed: " + installed + "). Update it under CrossCrease downloads.";
             }
             return null;
+        }
+
+        // The option the next launch uses: the saved one if the installed packages understand it, else the default.
+        LaunchChoiceOption EffectiveChoice(LibraryItem item, LaunchChoice choice)
+        {
+            if (ChoiceProblem(item, choice) != null) return DefaultChoiceOption(choice);
+            var option = ChoiceValue(item.Profile, choice);
+            return OptionProblem(item, option) == null ? option : DefaultChoiceOption(choice);
         }
 
         string ChoiceArguments(LibraryItem item, string launchId)
@@ -251,7 +273,7 @@ namespace CrossCrease
                 bool applies = choice.launches == null || choice.launches.Length == 0
                     ? launchId == "play" : Array.IndexOf(choice.launches, launchId) >= 0;
                 if (!applies) continue;
-                var option = ChoiceProblem(item, choice) == null ? ChoiceValue(item.Profile, choice) : DefaultChoiceOption(choice);
+                var option = EffectiveChoice(item, choice);
                 if (option != null && !string.IsNullOrWhiteSpace(option.arguments)) parts.Add(option.arguments.Trim());
             }
             return parts.Count == 0 ? "" : " " + string.Join(" ", parts.ToArray());
@@ -262,12 +284,12 @@ namespace CrossCrease
             foreach (var choice in Choices(item.Profile))
             {
                 if (ChoiceProblem(item, choice) != null) continue;
-                var current = ChoiceValue(item.Profile, choice);
+                var current = EffectiveChoice(item, choice);
                 var parent = new ToolStripMenuItem(choice.label ?? choice.id) { ForeColor = Ui.Text, Padding = new Padding(4, 3, 4, 3) };
                 parent.DropDown.BackColor = menu.BackColor;
                 foreach (var option in choice.options)
                 {
-                    if (option == null || string.IsNullOrWhiteSpace(option.value)) continue;
+                    if (option == null || string.IsNullOrWhiteSpace(option.value) || OptionProblem(item, option) != null) continue;
                     var capturedChoice = choice;
                     var capturedOption = option;
                     var entry = new ToolStripMenuItem(option.label ?? option.value) { ForeColor = Ui.Text, Padding = new Padding(4, 3, 4, 3), Checked = option == current };

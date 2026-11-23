@@ -384,15 +384,18 @@ namespace CrossCrease
                     content.Controls.Add(new Label { Text = choice.label ?? choice.id, Font = new Font("Segoe UI Semibold", 10f, FontStyle.Bold), AutoSize = true,
                         Location = new Point(Pad, y), ForeColor = problem == null ? Ui.Text : Ui.Dim });
                     y += Ui.S(26);
-                    var current = owner.ChoiceValue(item.Profile, choice);
+                    var current = owner.EffectiveChoice(item, choice);
                     var box = new ComboBox {
                         DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Location = new Point(Pad, y), Width = Ui.S(320),
                         BackColor = Color.FromArgb(38, 42, 50), ForeColor = Ui.Text, Enabled = problem == null, AccessibleName = choice.label ?? choice.id
                     };
                     var shown = new List<LaunchChoiceOption>();
+                    var unavailable = new List<string>();
                     foreach (var option in choice.options)
                     {
                         if (option == null || string.IsNullOrWhiteSpace(option.value)) continue;
+                        string optionProblem = problem == null ? owner.OptionProblem(item, option) : null;
+                        if (optionProblem != null) { unavailable.Add(optionProblem); continue; }
                         shown.Add(option);
                         box.Items.Add(option.label ?? option.value);
                         if (option == current) box.SelectedIndex = box.Items.Count - 1;
@@ -407,6 +410,7 @@ namespace CrossCrease
                     y += box.Height + Ui.S(6);
                     if (!string.IsNullOrWhiteSpace(choice.description)) Note(choice.description);
                     if (problem != null) Value(problem, Ui.Amber);
+                    foreach (var text in unavailable) Value(text, Ui.Amber);
                     y += Ui.S(6);
                 }
             }

@@ -69,9 +69,10 @@
     {
       "id": "resolution",
       "label": "Render resolution",
-      "description": "NHL 17 draws its picture at 1600x900 and scales it to your screen. 1080p and 1440p draw it sharper but need a faster graphics card; go back to 900p if the game slows down.",
+      "description": "NHL 17 draws its picture at 1600x900 and scales it to your screen. 720p draws about a third fewer pixels, for slower graphics cards, and looks a little softer. 1080p and 1440p draw it sharper but need a faster graphics card; go back to 900p if the game slows down.",
       "default": "900p",
       "options": [
+        { "value": "720p", "label": "720p (1280x720, for slower graphics cards)", "arguments": "-Resolution 720p", "minimum_versions": { "runtime": "0.4.11" } },
         { "value": "900p", "label": "900p (1600x900, original)", "arguments": "" },
         { "value": "1080p", "label": "1080p (1920x1080)", "arguments": "-Resolution 1080p" },
         { "value": "1440p", "label": "1440p (2560x1440)", "arguments": "-Resolution 1440p" }
